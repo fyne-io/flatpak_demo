@@ -36,6 +36,7 @@ A desktop file (`.desktop`) is also required (as with any other Linux desktop ap
 
 ## Example manifest
 The manifest for this project can be found below. It can be used as a base to use when packaging other apps using Flatpak.
+The sha256 field for the source can be found by downloading the file and running `sha256sum` on it.
 
 ```yml
 app-id: io.fyne.flatpak_demo # Needs to be the same as the Fyne app-id.
