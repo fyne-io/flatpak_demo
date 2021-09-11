@@ -11,12 +11,12 @@ flatpak install flathub org.freedesktop.Platform//21.08 org.freedesktop.Sdk//21.
 ```
 
 ## Building and installing
-Building the command can be done with the following command:
+Building the package can be done with the following command:
 ```
 flatpak-builder --force-clean build-dir io.fyne.flatpak_demo.yml
 ```
 
-The package can be built and installed using the following command:
+The package can also be built and installed in one step, using the following command:
 ```
 flatpak-builder --user --install --force-clean build-dir io.fyne.flatpak_demo.yml
 ```
@@ -30,7 +30,11 @@ The Flatpak applications run within a sandbox that restricts their communication
 Our example app only opens up filesystem access for the `Documents` folder and the Fyne preferences and document storage system. Remove these if your app do not need it.
 More information on avaliable permissions can be found [here](https://docs.flatpak.org/en/latest/sandbox-permissions.html).
 
+## Metainfo
+Flatpak requires the application to provide metadata about itself. This metadata can easily be created using the [AppStream Metainfo Creator](https://www.freedesktop.org/software/appstream/metainfocreator/#/guiapp).
+
 ## Example manifest
+The manifest for this project can be found below. It can be used as a base to use when packaging other apps using Flatpak.
 
 ```yml
 app-id: io.fyne.flatpak_demo # Needs to be the same as the Fyne app-id.
