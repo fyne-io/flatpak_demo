@@ -1,7 +1,5 @@
-fyne.io/fyne/v2 v2.0.5-0.20210910125337-ead5a44cf935 h1:B12Cl8OZa4Iim9rp713BrPzL3QOgkEVEru5Ekh7JQfw=
-fyne.io/fyne/v2 v2.0.5-0.20210910125337-ead5a44cf935/go.mod h1:c1vwI38Ebd0dAdxVa6H1Pj6/+cK1xtDy61+I31g+s14=
-fyne.io/fyne/v2 v2.0.5-0.20210911095849-c008821ce4b8 h1:hZGGpFnCNwk6w8hO0LGu9z8kZuwzgF8tTuLzPkE8rRo=
-fyne.io/fyne/v2 v2.0.5-0.20210911095849-c008821ce4b8/go.mod h1:c1vwI38Ebd0dAdxVa6H1Pj6/+cK1xtDy61+I31g+s14=
+fyne.io/fyne/v2 v2.0.5-0.20210911121929-b8bab111114f h1:aEsrTrLucCFgddvTdrT0oNKOexjA7jHq1nIt/KRNRbM=
+fyne.io/fyne/v2 v2.0.5-0.20210911121929-b8bab111114f/go.mod h1:c1vwI38Ebd0dAdxVa6H1Pj6/+cK1xtDy61+I31g+s14=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/toml v0.4.1/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/Kodeworks/golang-image-ico v0.0.0-20141118225523-73f0f4cfade9/go.mod h1:7uhhqiBaR4CpN0k9rMjOtjpcfGd6DG2m04zQxKnWQ0I=
