@@ -82,5 +82,4 @@ modules:
 ```
 
 ## Screenshot
-![image](https://user-images.githubusercontent.com/25466657/132945649-e6858f50-bae9-478c-ac25-1e7c6eb3d1d7.png)
-
+![image](https://user-images.githubusercontent.com/25466657/132946432-97394fa4-3980-473a-a161-99240d02a95e.png)
