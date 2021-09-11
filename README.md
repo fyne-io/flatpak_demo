@@ -26,7 +26,7 @@ It is possible to enable network access during the build, but it is recommended 
 For that reason, it is a good idea to vendor the project using `go mod vendor` and add the files to the git repo.
 
 ## Sandbox permissions
-The Flatpak applications run within a sandbox that restricts their communication with the host system. It is generally preffered to have the application be as strict as possible.
+The Flatpak applications run within a sandbox that restricts their communication with the host system. It is generally preferred to have the application be as strict as possible.
 Our example app only opens up filesystem access for the `Documents` folder and the Fyne preferences and document storage system. Remove these if your app do not need it.
 More information on avaliable permissions can be found [here](https://docs.flatpak.org/en/latest/sandbox-permissions.html).
 
