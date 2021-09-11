@@ -3,6 +3,7 @@ A demo of a Fyne application packaged as a Flatpak. This project is intended to 
 
 ## Requirements
 Both `flatpak` and `flatpak-builder` need to be installed in order to build the packages. Commands for installing Flatpak can be found [here](https://flatpak.org/setup/). Installing the builder should be very similar.
+More information about how to build Flatpaks can be found [here](https://docs.flatpak.org/en/latest/first-build.html) and [here](https://docs.flatpak.org/en/latest/building.html).
 
 With that installed, we need to install the development SDKs that we are going to use:
 ```
@@ -20,12 +21,21 @@ The package can be built and installed using the following command:
 flatpak-builder --user --install --force-clean build-dir io.fyne.flatpak_demo.yml
 ```
 
+## Vendoring
+It is possible to enable network access during the build, but it is recommended to not do so. If you want to publish the package to [flathub](https://flathub.org), it is even a requirement.
+For that reason, it is a good idea to vendor the project using `go mod vendor` and add the files to the git repo.
+
+## Sandbox permissions
+The Flatpak applications run within a sandbox that restricts their communication with the host system. It is generally preffered to have the application be as strict as possible.
+Our example app only opens up filesystem access for the `Documents` folder and the Fyne preferences and document storage system. Remove these if your app do not need it.
+More information on avaliable permissions can be found [here](https://docs.flatpak.org/en/latest/sandbox-permissions.html).
+
 ## Example manifest
 
 ```yml
-app-id: io.fyne.flatpak_demo # CHange to your own app-id. Needs to be the same as the Fyne app-id.
+app-id: io.fyne.flatpak_demo # Needs to be the same as the Fyne app-id.
 runtime: org.freedesktop.Platform
-runtime-version: '21.08' # Use the latest version if possible.
+runtime-version: '21.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
     - org.freedesktop.Sdk.Extension.golang
@@ -39,7 +49,7 @@ finish-args:
     # Only needed if building with -tags wayland.
     #- --socket=wayland
 
-    # Open up the documents folder as a minimal example. Remove if you don't need filesystem access.
+    # Open up the documents folder as a minimal example.
     - --filesystem=xdg-documents
 
     # Needed for Fyne preferences and document storage.
@@ -62,5 +72,5 @@ modules:
       sources:
         - type: archive
           url: "https://github.com/Jacalz/flatpak_demo/archive/refs/tags/v1.0.0.tar.gz"
-          sha256: #TODO
+          sha256: f57aac7463a8dee7884d5c9873277dc71b65dc9fe0a5f2d6636ff9de58be9008
 ```

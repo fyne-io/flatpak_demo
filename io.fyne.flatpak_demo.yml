@@ -1,6 +1,6 @@
-app-id: io.fyne.flatpak_demo # CHange to your own app-id. Needs to be the same as the Fyne app-id.
+app-id: io.fyne.flatpak_demo # Needs to be the same as the Fyne app-id.
 runtime: org.freedesktop.Platform
-runtime-version: '21.08' # Use the latest version if possible.
+runtime-version: '21.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
     - org.freedesktop.Sdk.Extension.golang
@@ -14,7 +14,7 @@ finish-args:
     # Only needed if building with -tags wayland.
     #- --socket=wayland
 
-    # Open up the documents folder as a minimal example. Remove if you don't need filesystem access.
+    # Open up the documents folder as a minimal example.
     - --filesystem=xdg-documents
 
     # Needed for Fyne preferences and document storage.
@@ -37,4 +37,4 @@ modules:
       sources:
         - type: archive
           url: "https://github.com/Jacalz/flatpak_demo/archive/refs/tags/v1.0.0.tar.gz"
-          sha256: #TODO
+          sha256: f57aac7463a8dee7884d5c9873277dc71b65dc9fe0a5f2d6636ff9de58be9008
