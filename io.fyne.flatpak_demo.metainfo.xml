@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.fyne.flatpak_demo</id>
+  
+  <name>flatpak_demo</name>
+  <summary>A demo of a Fyne application packaged as a Flatpak. </summary>
+  
+  <metadata_license>MIT</metadata_license>
+  <project_license>BSD-3-Clause</project_license>
+  
+  <recommends>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <control>touch</control>
+  </recommends>
+  
+  <description>
+    <p>
+      A demo of a Fyne application packaged as a Flatpak. This project is intended to serve as a starting point to help developers package their Fyne applications using Flatpak.
+    </p>
+  </description>
+  
+  <launchable type="desktop-id">io.fyne.flatpak_demo.desktop</launchable>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://user-images.githubusercontent.com/25466657/132945649-e6858f50-bae9-478c-ac25-1e7c6eb3d1d7.png</image>
+    </screenshot>
+  </screenshots>
+</component>
