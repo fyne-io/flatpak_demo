@@ -1,5 +1,5 @@
 # flatpak_demo
-A demo of a Fyne application packaged as a Flatpak. This project is intended to serve as a helpful starting point to help developers package their Fyne applications using Flatpak.
+A demo of a Fyne application packaged as a Flatpak. This project is intended to serve as a starting point to help developers package their Fyne applications using Flatpak.
 
 ## Requirements
 Both `flatpak` and `flatpak-builder` need to be installed in order to build the packages. Commands for installing Flatpak can be found [here](https://flatpak.org/setup/). Installing the builder should be very similar.
@@ -78,3 +78,7 @@ modules:
           url: "https://github.com/Jacalz/flatpak_demo/archive/refs/tags/v1.0.0.tar.gz"
           sha256: f57aac7463a8dee7884d5c9873277dc71b65dc9fe0a5f2d6636ff9de58be9008
 ```
+
+## Screenshot
+![image](https://user-images.githubusercontent.com/25466657/132945649-e6858f50-bae9-478c-ac25-1e7c6eb3d1d7.png)
+
