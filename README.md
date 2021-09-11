@@ -30,8 +30,9 @@ The Flatpak applications run within a sandbox that restricts their communication
 Our example app only opens up filesystem access for the `Documents` folder and the Fyne preferences and document storage system. Remove these if your app do not need it.
 More information on avaliable permissions can be found [here](https://docs.flatpak.org/en/latest/sandbox-permissions.html).
 
-## Metainfo
+## Metainfo and desktop file
 Flatpak requires the application to provide metadata about itself. This metadata can easily be created using the [AppStream Metainfo Creator](https://www.freedesktop.org/software/appstream/metainfocreator/#/guiapp).
+A desktop file (`.desktop`) is also required (as with any other Linux desktop application). You can let the metainfo creator above generate one for you.
 
 ## Example manifest
 The manifest for this project can be found below. It can be used as a base to use when packaging other apps using Flatpak.
