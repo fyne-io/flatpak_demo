@@ -21,6 +21,12 @@ The package can also be built and installed in one step, using the following com
 flatpak-builder --user --install --force-clean build-dir io.fyne.flatpak_demo.yml
 ```
 
+## Running
+The installed package can then be started by running the following command:
+```
+flatpak run io.fyne.flatpak_demo
+```
+
 ## Vendoring
 It is possible to enable network access during the build, but it is recommended to not do so. If you want to publish the package to [flathub](https://flathub.org), it is even a requirement.
 For that reason, it is a good idea to vendor the project using `go mod vendor` and add the files to the git repo.
