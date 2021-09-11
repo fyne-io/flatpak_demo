@@ -77,8 +77,8 @@ modules:
         - install -Dm00644 $FLATPAK_ID.metainfo.xml $FLATPAK_DEST/share/metainfo/$FLATPAK_ID.metainfo.xml
       sources:
         - type: archive
-          url: "https://github.com/Jacalz/flatpak_demo/archive/refs/tags/v1.0.0.tar.gz"
-          sha256: f57aac7463a8dee7884d5c9873277dc71b65dc9fe0a5f2d6636ff9de58be9008
+          url: "https://github.com/Jacalz/flatpak_demo/archive/refs/tags/v0.1.0.tar.gz"
+          sha256: fddf76d6164e34be5f64f30402d9fd1cb8a676bc07837319df63e602da234879
 ```
 
 ## Screenshot
