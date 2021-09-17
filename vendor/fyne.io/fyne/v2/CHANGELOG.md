@@ -3,13 +3,14 @@
 This file lists the main changes with each version of the Fyne toolkit.
 More detailed release notes can be found on the [releases page](https://github.com/fyne-io/fyne/releases). 
 
-## 2.1 - Ongoing
+## 2.1 - 17 September 2021
 
 ### Added
 
 * DocTabs container for handling multiple open files
 * Lifecycle API for handling foreground, background and other event
 * Add RichText widget and Markdown parser
+* Add TabWidth to TextStyle to specify tab size in spaces
 * Add CheckGroup widget for multi-select
 * Add FyneApp.toml metadata file to ease build commands
 * Include http and https in standard repositories
@@ -40,6 +41,7 @@ More detailed release notes can be found on the [releases page](https://github.c
 * Improved text layout speed by caching string size calculations
 * Updated to require Go 1.14 so we can use some new features
 * Window Resize request is now asynchronous
+* Up/Down keys take cursor home/end when on first/last lines respectively
 
 ### Fixed
 
@@ -65,6 +67,7 @@ More detailed release notes can be found on the [releases page](https://github.c
 * Sequential writes to preferences does not save to file (#2449)
 * Correct Android keyboard handling (#2447)
 * MIUI-Android: The widget’s Hyperlink cannot open the URL (#1514)
+* Improved performance of data binding conversions and text MinSize
 
 
 ## 2.0.4 - 6 August 2021
