@@ -36,5 +36,5 @@ modules:
         - install -Dm00644 $FLATPAK_ID.metainfo.xml $FLATPAK_DEST/share/metainfo/$FLATPAK_ID.metainfo.xml
       sources:
         - type: archive
-          url: "https://github.com/Jacalz/flatpak_demo/archive/refs/tags/v0.1.0.tar.gz"
-          sha256: fddf76d6164e34be5f64f30402d9fd1cb8a676bc07837319df63e602da234879
+          url: "https://github.com/fyne-io/flatpak_demo/archive/refs/tags/v1.0.0.tar.gz"
+          sha256: d07c951254d33defdc627f42eee255e5360e38ec201948f1608c4db6ccbda44f
