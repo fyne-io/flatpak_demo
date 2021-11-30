@@ -32,9 +32,11 @@ It is possible to enable network access during the build, but it is recommended 
 For that reason, it is a good idea to vendor the project using `go mod vendor` and add the files to the git repo.
 
 ## Sandbox permissions
-The Flatpak applications run within a sandbox that restricts their communication with the host system. It is generally preferred to have the application be as strict as possible.
-Our example app only opens up filesystem access for the `Documents` folder and the Fyne preferences and document storage system. Remove these if your app do not need it.
-More information on avaliable permissions can be found [here](https://docs.flatpak.org/en/latest/sandbox-permissions.html).
+The Flatpak applications run within a sandbox that restricts their communication with the host system. It is generally preferred to have the application be as strict as possible,
+with no more permissions enabled than necessary. Our example app only opens up filesystem access for the `Documents` folder as well as the Fyne config directory to support Fyne
+preferences and Fyne document storage system. Remove these if your app do not need it.
+More information on avaliable permissions can be found on the [sandbox-permissions](https://docs.flatpak.org/en/latest/sandbox-permissions.html) 
+and the [sandbox-permissions-reference](https://docs.flatpak.org/en/latest/sandbox-permissions-reference.html) documentation pages.
 
 ## Metainfo and desktop file
 Flatpak requires the application to provide metadata about itself. This metadata can easily be created using the [AppStream Metainfo Creator](https://www.freedesktop.org/software/appstream/metainfocreator/#/guiapp).
@@ -43,6 +45,9 @@ A desktop file (`.desktop`) is also required (as with any other Linux desktop ap
 ## Example manifest
 The manifest for this project can be found below. It can be used as a base to use when packaging other apps using Flatpak.
 The sha256 field for the source can be found by downloading the file and running `sha256sum` on it.
+
+Please note that this manifest file normally wouldn't be in the same repository as the rest of the code, but instead
+part of a separate flatpak-specific repository. We have it in the same repository here for the sake of simplicity.
 
 ```yml
 app-id: io.fyne.flatpak_demo # Needs to be the same as the Fyne app-id.
@@ -60,6 +65,9 @@ finish-args:
 
     # Only needed if building with -tags wayland.
     #- --socket=wayland
+
+    # Support for desktop notifications.
+    - --talk-name=org.freedesktop.Notifications
 
     # Open up the documents folder as a minimal example.
     - --filesystem=xdg-documents
@@ -83,8 +91,8 @@ modules:
         - install -Dm00644 $FLATPAK_ID.metainfo.xml $FLATPAK_DEST/share/metainfo/$FLATPAK_ID.metainfo.xml
       sources:
         - type: archive
-          url: "https://github.com/Jacalz/flatpak_demo/archive/refs/tags/v0.1.0.tar.gz"
-          sha256: fddf76d6164e34be5f64f30402d9fd1cb8a676bc07837319df63e602da234879
+          url: "https://github.com/fyne-io/flatpak_demo/archive/refs/tags/v1.0.0.tar.gz"
+          sha256: d07c951254d33defdc627f42eee255e5360e38ec201948f1608c4db6ccbda44f
 ```
 
 ## Screenshot

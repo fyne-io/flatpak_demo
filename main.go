@@ -37,7 +37,9 @@ func main() {
 			}
 
 			markdown.SetText(string(text))
+			a.SendNotification(&fyne.Notification{Title: "Opened a file", Content: file.URI().Name() + " was opened correctly."})
 		}, w)
+
 		files.SetFilter(storage.NewExtensionFileFilter([]string{".md"}))
 		files.Show()
 	}}
