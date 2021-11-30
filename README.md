@@ -48,6 +48,7 @@ The sha256 field for the source can be found by downloading the file and running
 
 Please note that this manifest file normally wouldn't be in the same repository as the rest of the code, but instead
 part of a separate flatpak-specific repository. We have it in the same repository here for the sake of simplicity.
+This manifest uses the latest release of this repository and will not get local changes.
 
 ```yml
 app-id: io.fyne.flatpak_demo # Needs to be the same as the Fyne app-id.
@@ -93,6 +94,16 @@ modules:
         - type: archive
           url: "https://github.com/fyne-io/flatpak_demo/archive/refs/tags/v1.1.0.tar.gz"
           sha256: df18aa770b404801396caabd5f6cfa0658fca4419886d65b998bc80ed66fe59e
+```
+
+### Building local code
+If you want to build using the local code in the repository instead of the latest release, you can
+swap out the source section in the manifest above with this:
+
+```yml
+      sources:
+        - type: dir
+          path: ./
 ```
 
 ## Screenshot
