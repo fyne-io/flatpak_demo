@@ -1,4 +1,4 @@
-# fyne.io/fyne/v2 v2.1.0
+# fyne.io/fyne/v2 v2.1.1
 ## explicit
 fyne.io/fyne/v2
 fyne.io/fyne/v2/app
@@ -19,13 +19,12 @@ fyne.io/fyne/v2/internal/driver/common
 fyne.io/fyne/v2/internal/driver/glfw
 fyne.io/fyne/v2/internal/driver/mobile
 fyne.io/fyne/v2/internal/driver/mobile/app
-fyne.io/fyne/v2/internal/driver/mobile/app/internal/callfn
+fyne.io/fyne/v2/internal/driver/mobile/app/callfn
 fyne.io/fyne/v2/internal/driver/mobile/event/key
 fyne.io/fyne/v2/internal/driver/mobile/event/lifecycle
 fyne.io/fyne/v2/internal/driver/mobile/event/paint
 fyne.io/fyne/v2/internal/driver/mobile/event/size
 fyne.io/fyne/v2/internal/driver/mobile/event/touch
-fyne.io/fyne/v2/internal/driver/mobile/geom
 fyne.io/fyne/v2/internal/driver/mobile/gl
 fyne.io/fyne/v2/internal/driver/mobile/mobileinit
 fyne.io/fyne/v2/internal/painter
