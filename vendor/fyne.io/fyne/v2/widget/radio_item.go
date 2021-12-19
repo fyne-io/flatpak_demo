@@ -112,7 +112,7 @@ func (i *radioItem) SetSelected(selected bool) {
 //
 // Implements: fyne.Tappable
 func (i *radioItem) Tapped(_ *fyne.PointEvent) {
-	if !i.focused {
+	if !i.focused && !fyne.CurrentDevice().IsMobile() {
 		fyne.CurrentApp().Driver().CanvasForObject(i.super()).Focus(i.super().(fyne.Focusable))
 	}
 	i.toggle()
@@ -194,6 +194,8 @@ func (r *radioItemRenderer) update() {
 	}
 	if r.item.Disabled() {
 		res = theme.NewDisabledResource(res)
+	} else if r.item.Selected {
+		res = theme.NewPrimaryThemedResource(res)
 	}
 	r.icon.Resource = res
 
