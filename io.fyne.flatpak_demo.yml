@@ -20,9 +20,6 @@ finish-args:
     # Open up the documents folder as a minimal example.
     - --filesystem=xdg-documents
 
-    # Needed for Fyne preferences and document storage.
-    - --filesystem=~/.config/fyne/$FLATPAK_ID:create
-
 build-options:
   env:
     - GOBIN=/app/bin
@@ -36,8 +33,7 @@ modules:
         - install -Dm00755 flatpak_demo $FLATPAK_DEST/bin/flatpak_demo
         - install -Dm00644 Icon.png $FLATPAK_DEST/share/icons/hicolor/256x256/apps/$FLATPAK_ID.png
         - install -Dm00644 $FLATPAK_ID.desktop $FLATPAK_DEST/share/applications/$FLATPAK_ID.desktop
-        - install -Dm00644 $FLATPAK_ID.metainfo.xml $FLATPAK_DEST/share/metainfo/$FLATPAK_ID.metainfo.xml
+        - install -Dm00644 $FLATPAK_ID.appdata.xml $FLATPAK_DEST/share/metainfo/$FLATPAK_ID.appdata.xml
       sources:
-        - type: archive
-          url: "https://github.com/fyne-io/flatpak_demo/archive/refs/tags/v1.1.0.tar.gz"
-          sha256: df18aa770b404801396caabd5f6cfa0658fca4419886d65b998bc80ed66fe59e
+        - type: dir
+          path: ./

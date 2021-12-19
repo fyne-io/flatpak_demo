@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.fyne.flatpak_demo</id>
+  
+  <name>flatpak_demo</name>
+  <summary>A demo of a Fyne application packaged as a Flatpak. </summary>
+  
+  <metadata_license>MIT</metadata_license>
+  <project_license>BSD-3-Clause</project_license>
+  
+  <recommends>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <control>touch</control>
+  </recommends>
+  
+  <description>
+    <p>
+      A demo of a Fyne application packaged as a Flatpak. This project is intended to serve as a starting point to help developers package their Fyne applications using Flatpak.
+    </p>
+  </description>
+  
+  <launchable type="desktop-id">io.fyne.flatpak_demo.desktop</launchable>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://user-images.githubusercontent.com/25466657/132945649-e6858f50-bae9-478c-ac25-1e7c6eb3d1d7.png</image>
+    </screenshot>
+  </screenshots>
+
+  <url type="bugtracker">https://github.com/fyne-io/flatpak_demo/issues</url>
+  <url type="donation">https://github.com/sponsors/fyne-io</url>
+  <url type="homepage">https://github.com/fyne-io/flatpak_demo</url>
+
+  <!-- Generate the oars rating at: https://hughsie.github.io/oars/generate.html -->
+  <content_rating type="oars-1.1" />
+
+</component>
