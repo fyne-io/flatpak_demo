@@ -38,9 +38,12 @@ preferences and Fyne document storage system. Remove these if your app do not ne
 More information on avaliable permissions can be found on the [sandbox-permissions](https://docs.flatpak.org/en/latest/sandbox-permissions.html) 
 and the [sandbox-permissions-reference](https://docs.flatpak.org/en/latest/sandbox-permissions-reference.html) documentation pages.
 
-## Metainfo and desktop file
-Flatpak requires the application to provide metadata about itself. This metadata can easily be created using the [AppStream Metainfo Creator](https://www.freedesktop.org/software/appstream/metainfocreator/#/guiapp).
-A desktop file (`.desktop`) is also required (as with any other Linux desktop application). You can let the metainfo creator above generate one for you.
+## Appdata and desktop files
+Flatpak requires the application to provide metadata about itself. This data is then used in application stores like [Gnome Software](https://apps.gnome.org/en-GB/app/org.gnome.Software/), [KDE Discover](https://apps.kde.org/discover/)
+and many others, to display information about the application. This metadata can easily be created using the [AppStream Metainfo Creator](https://www.freedesktop.org/software/appstream/metainfocreator/#/guiapp),
+or you can use the [io.fyne.flatpak_demo.appdata.xml](https://github.com/fyne-io/flatpak_demo/blob/main/io.fyne.flatpak_demo.appdata.xml) file as a reference.
+
+A desktop file (`.desktop`) is also required (as with any other Linux desktop application). You can let the metainfo creator above generate one for you, or you can use the [io.fyne.flatpak_demo.desktop](https://github.com/fyne-io/flatpak_demo/blob/main/io.fyne.flatpak_demo.desktop) file as a reference.
 
 ## Example manifest
 The manifest for this project can be found below. It can be used as a base to use when packaging other apps using Flatpak.
@@ -73,9 +76,6 @@ finish-args:
     # Open up the documents folder as a minimal example.
     - --filesystem=xdg-documents
 
-    # Needed for Fyne preferences and document storage.
-    - --filesystem=~/.config/fyne/$FLATPAK_ID:create
-
 build-options:
   env:
     - GOBIN=/app/bin
@@ -89,7 +89,7 @@ modules:
         - install -Dm00755 flatpak_demo $FLATPAK_DEST/bin/flatpak_demo
         - install -Dm00644 Icon.png $FLATPAK_DEST/share/icons/hicolor/256x256/apps/$FLATPAK_ID.png
         - install -Dm00644 $FLATPAK_ID.desktop $FLATPAK_DEST/share/applications/$FLATPAK_ID.desktop
-        - install -Dm00644 $FLATPAK_ID.metainfo.xml $FLATPAK_DEST/share/metainfo/$FLATPAK_ID.metainfo.xml
+        - install -Dm00644 $FLATPAK_ID.appdata.xml $FLATPAK_DEST/share/appdata/$FLATPAK_ID.appdata.xml
       sources:
         - type: archive
           url: "https://github.com/fyne-io/flatpak_demo/archive/refs/tags/v1.1.0.tar.gz"
