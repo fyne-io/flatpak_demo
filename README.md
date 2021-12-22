@@ -54,7 +54,7 @@ part of a separate flatpak-specific repository. We have it in the same repositor
 This manifest uses the latest release of this repository and will not get local changes.
 
 ```yml
-app-id: io.fyne.flatpak_demo # Needs to be the same as the Fyne app-id.
+app-id: io.fyne.flatpak_demo
 runtime: org.freedesktop.Platform
 runtime-version: '21.08'
 sdk: org.freedesktop.Sdk
