@@ -33,7 +33,7 @@ modules:
         - install -Dm00755 flatpak_demo $FLATPAK_DEST/bin/flatpak_demo
         - install -Dm00644 Icon.png $FLATPAK_DEST/share/icons/hicolor/256x256/apps/$FLATPAK_ID.png
         - install -Dm00644 $FLATPAK_ID.desktop $FLATPAK_DEST/share/applications/$FLATPAK_ID.desktop
-        - install -Dm00644 $FLATPAK_ID.appdata.xml $FLATPAK_DEST/share/metainfo/$FLATPAK_ID.appdata.xml
+        - install -Dm00644 $FLATPAK_ID.appdata.xml $FLATPAK_DEST/share/appdata/$FLATPAK_ID.appdata.xml
       sources:
         - type: dir
           path: ./
