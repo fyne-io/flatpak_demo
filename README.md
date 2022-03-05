@@ -5,7 +5,12 @@ A demo of a Fyne application packaged as a Flatpak. This project is intended to 
 Both `flatpak` and `flatpak-builder` need to be installed in order to build the packages. Commands for installing Flatpak can be found [here](https://flatpak.org/setup/). Installing the builder should be very similar.
 More information about how to build Flatpaks can be found [here](https://docs.flatpak.org/en/latest/first-build.html) and [here](https://docs.flatpak.org/en/latest/building.html).
 
-With that installed, we need to install the development SDKs that we are going to use:
+With that installed, we need to first get the [flathub](https://flatpak.org) repository set up.
+```
+flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+```
+
+We can now move on to installing the development SDKs that we are going to use:
 ```
 flatpak install flathub org.freedesktop.Platform//21.08 org.freedesktop.Sdk//21.08 org.freedesktop.Sdk.Extension.golang//21.08
 ```
