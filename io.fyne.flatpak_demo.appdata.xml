@@ -3,7 +3,8 @@
   <id>io.fyne.flatpak_demo</id>
   
   <name>flatpak_demo</name>
-  <summary>A demo of a Fyne application packaged as a Flatpak. </summary>
+  <developer_name>Fyne.io developers</developer_name>
+  <summary>A demo of a Fyne application packaged as a Flatpak.</summary>
   
   <metadata_license>MIT</metadata_license>
   <project_license>BSD-3-Clause</project_license>
@@ -33,5 +34,14 @@
 
   <!-- Generate the oars rating at: https://hughsie.github.io/oars/generate.html -->
   <content_rating type="oars-1.1" />
+
+  <releases>
+    <release version="1.2.0" date="2021-12-22" type="stable">
+      <description>
+        <p>Better metadata and sandbox permissions</p>
+      </description>
+      <url type="details">https://github.com/fyne-io/flatpak_demo/releases/tag/v1.2.0</url>
+    </release>
+  </releases>
 
 </component>
