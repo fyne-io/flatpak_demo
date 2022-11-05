@@ -1,6 +1,6 @@
 app-id: io.fyne.flatpak_demo
 runtime: org.freedesktop.Platform
-runtime-version: '21.08'
+runtime-version: '22.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
     - org.freedesktop.Sdk.Extension.golang
@@ -17,8 +17,8 @@ finish-args:
     # Needed to support desktop notifications.
     - --talk-name=org.freedesktop.Notifications
 
-    # Open up the documents folder as a minimal example.
-    - --filesystem=xdg-documents
+    # Allowing access to the home directory as example.
+    - --filesystem=home
 
 build-options:
   env:
@@ -29,7 +29,7 @@ modules:
     - name: flatpak_demo
       buildsystem: simple
       build-commands:
-        - $GOROOT/bin/go build -o flatpak_demo
+        - $GOROOT/bin/go build -trimpath -o flatpak_demo
         - install -Dm00755 flatpak_demo $FLATPAK_DEST/bin/flatpak_demo
         - install -Dm00644 Icon.png $FLATPAK_DEST/share/icons/hicolor/256x256/apps/$FLATPAK_ID.png
         - install -Dm00644 $FLATPAK_ID.desktop $FLATPAK_DEST/share/applications/$FLATPAK_ID.desktop

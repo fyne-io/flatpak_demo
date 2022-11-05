@@ -12,13 +12,14 @@ flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flat
 
 We can now move on to installing the development SDKs that we are going to use:
 ```
-flatpak install flathub org.freedesktop.Platform//21.08 org.freedesktop.Sdk//21.08 org.freedesktop.Sdk.Extension.golang//21.08
+flatpak install flathub org.freedesktop.Platform//22.08 org.freedesktop.Sdk//22.08 org.freedesktop.Sdk.Extension.golang//22.08
 ```
 
 ## Building and installing
+
 Building the package can be done with the following command:
 ```
-flatpak-builder --force-clean build-dir io.fyne.flatpak_demo.yml
+flatpak-builder --user --force-clean build-dir io.fyne.flatpak_demo.yml
 ```
 
 The package can also be built and installed in one step, using the following command:
@@ -29,7 +30,7 @@ flatpak-builder --user --install --force-clean build-dir io.fyne.flatpak_demo.ym
 ## Running
 The installed package can then be started by running the following command:
 ```
-flatpak run io.fyne.flatpak_demo
+flatpak run --user io.fyne.flatpak_demo
 ```
 
 ## Vendoring
@@ -61,7 +62,7 @@ This manifest uses the latest release of this repository and will not get local 
 ```yml
 app-id: io.fyne.flatpak_demo
 runtime: org.freedesktop.Platform
-runtime-version: '21.08'
+runtime-version: '22.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
     - org.freedesktop.Sdk.Extension.golang
@@ -78,8 +79,8 @@ finish-args:
     # Needed to support desktop notifications.
     - --talk-name=org.freedesktop.Notifications
 
-    # Open up the documents folder as a minimal example.
-    - --filesystem=xdg-documents
+    # Allowing access to the home directory as example.
+    - --filesystem=home
 
 build-options:
   env:
@@ -90,15 +91,15 @@ modules:
     - name: flatpak_demo
       buildsystem: simple
       build-commands:
-        - $GOROOT/bin/go build -o flatpak_demo
+        - $GOROOT/bin/go build -trimpath -o flatpak_demo
         - install -Dm00755 flatpak_demo $FLATPAK_DEST/bin/flatpak_demo
         - install -Dm00644 Icon.png $FLATPAK_DEST/share/icons/hicolor/256x256/apps/$FLATPAK_ID.png
         - install -Dm00644 $FLATPAK_ID.desktop $FLATPAK_DEST/share/applications/$FLATPAK_ID.desktop
         - install -Dm00644 $FLATPAK_ID.appdata.xml $FLATPAK_DEST/share/appdata/$FLATPAK_ID.appdata.xml
       sources:
         - type: archive
-          url: "https://github.com/fyne-io/flatpak_demo/archive/refs/tags/v1.1.0.tar.gz"
-          sha256: df18aa770b404801396caabd5f6cfa0658fca4419886d65b998bc80ed66fe59e
+          url: "https://github.com/fyne-io/flatpak_demo/archive/refs/tags/v1.2.0.tar.gz"
+          sha256: bd892edacf56af9d443fd7f9f4825a33165a46d4d7bb56aee3de690144798c18
 ```
 
 ### Building local code
