@@ -22,7 +22,7 @@
   <launchable type="desktop-id">io.fyne.flatpak_demo.desktop</launchable>
   <screenshots>
     <screenshot type="default">
-      <image>https://user-images.githubusercontent.com/25466657/132945649-e6858f50-bae9-478c-ac25-1e7c6eb3d1d7.png</image>
+      <image>https://raw.githubusercontent.com/fyne-io/flatpak_demo/main/img/screenshot1.png</image>
       <caption>Markdown preview</caption>
     </screenshot>
   </screenshots>
