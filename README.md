@@ -3,6 +3,8 @@ A demo of a Fyne application packaged as a Flatpak. This project is intended to 
 
 ![screenshot](img/screenshot1.png)
 
+![software-center](img/software-center.png)
+
 ## Requirements
 Both `flatpak` and `flatpak-builder` need to be installed in order to build the packages. Commands for installing Flatpak can be found [here](https://flatpak.org/setup/). Installing the builder should be very similar.
 More information about how to build Flatpaks can be found [here](https://docs.flatpak.org/en/latest/first-build.html) and [here](https://docs.flatpak.org/en/latest/building.html).
@@ -64,7 +66,7 @@ This manifest uses the latest release of this repository and will not get local 
 ```yml
 app-id: io.fyne.flatpak_demo
 runtime: org.freedesktop.Platform
-runtime-version: '22.08'
+runtime-version: '23.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
     - org.freedesktop.Sdk.Extension.golang
@@ -100,8 +102,8 @@ modules:
         - install -Dm00644 $FLATPAK_ID.appdata.xml $FLATPAK_DEST/share/appdata/$FLATPAK_ID.appdata.xml
       sources:
         - type: archive
-          url: "https://github.com/fyne-io/flatpak_demo/archive/refs/tags/v1.2.0.tar.gz"
-          sha256: bd892edacf56af9d443fd7f9f4825a33165a46d4d7bb56aee3de690144798c18
+          url: "https://github.com/fyne-io/flatpak_demo/archive/refs/tags/v1.3.0.tar.gz"
+          sha256: a9d3b920404b3b699da757a9641ebc75cf43e35515dd9879622de33c6d104b63
 ```
 
 ### Building local code
@@ -113,6 +115,3 @@ swap out the source section in the manifest above with this:
         - type: dir
           path: ./
 ```
-
-## Screenshots
-![software-center](img/software-center.png)
