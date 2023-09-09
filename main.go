@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"io"
 	"log"
 
@@ -13,8 +14,13 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+//go:embed Icon.png
+var iconData []byte
+
 func main() {
 	a := app.NewWithID("io.fyne.flatpak_demo")
+	a.SetIcon(&fyne.StaticResource{StaticName: "Icon.png", StaticContent: iconData})
+
 	w := a.NewWindow("Flatpak Demo")
 
 	markdown := &widget.Entry{MultiLine: true, Wrapping: fyne.TextWrapWord}
