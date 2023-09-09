@@ -1,6 +1,8 @@
 # flatpak_demo
 A demo of a Fyne application packaged as a Flatpak. This project is intended to serve as a starting point to help developers package their Fyne applications using Flatpak.
 
+![screenshot](img/screenshot1.png)
+
 ## Requirements
 Both `flatpak` and `flatpak-builder` need to be installed in order to build the packages. Commands for installing Flatpak can be found [here](https://flatpak.org/setup/). Installing the builder should be very similar.
 More information about how to build Flatpaks can be found [here](https://docs.flatpak.org/en/latest/first-build.html) and [here](https://docs.flatpak.org/en/latest/building.html).
@@ -112,5 +114,5 @@ swap out the source section in the manifest above with this:
           path: ./
 ```
 
-## Screenshot
-![image](https://user-images.githubusercontent.com/25466657/132946432-97394fa4-3980-473a-a161-99240d02a95e.png)
+## Screenshots
+![software-center](img/software-center.png)
