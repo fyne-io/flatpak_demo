@@ -2,8 +2,6 @@ package app
 
 import (
 	"bytes"
-	"encoding/json"
-	"io"
 	"os"
 	"path/filepath"
 	"sync"
@@ -12,12 +10,17 @@ import (
 	"fyne.io/fyne/v2/theme"
 )
 
+var noAnimations bool // set to true at compile time if no_animations tag is passed
+
 // SettingsSchema is used for loading and storing global settings
 type SettingsSchema struct {
 	// these items are used for global settings load
-	ThemeName    string  `json:"theme"`
-	Scale        float32 `json:"scale"`
-	PrimaryColor string  `json:"primary_color"`
+	ThemeName         string  `json:"theme"`
+	Scale             float32 `json:"scale"`
+	PrimaryColor      string  `json:"primary_color"`
+	CloudName         string  `json:"cloud_name"`
+	CloudConfig       string  `json:"cloud_config"`
+	DisableAnimations bool    `json:"no_animations"`
 }
 
 // StoragePath returns the location of the settings storage
@@ -70,6 +73,10 @@ func (s *settings) SetTheme(theme fyne.Theme) {
 	s.applyTheme(theme, s.variant)
 }
 
+func (s *settings) ShowAnimations() bool {
+	return !s.schema.DisableAnimations && !noAnimations
+}
+
 func (s *settings) ThemeVariant() fyne.ThemeVariant {
 	return s.variant
 }
@@ -106,28 +113,6 @@ func (s *settings) apply() {
 		}
 		return true
 	})
-}
-
-func (s *settings) load() {
-	err := s.loadFromFile(s.schema.StoragePath())
-	if err != nil && err != io.EOF { // we can get an EOF in windows settings writes
-		fyne.LogError("Settings load error:", err)
-	}
-
-	s.setupTheme()
-}
-
-func (s *settings) loadFromFile(path string) error {
-	file, err := os.Open(path) // #nosec
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
-	}
-	decode := json.NewDecoder(file)
-
-	return decode.Decode(&s.schema)
 }
 
 func (s *settings) fileChanged() {

@@ -15,8 +15,10 @@ func (c *ClipStack) Pop() *ClipItem {
 		return nil
 	}
 
-	ret := c.clips[len(c.clips)-1]
-	c.clips = c.clips[:len(c.clips)-1]
+	top := len(c.clips) - 1
+	ret := c.clips[top]
+	c.clips[top] = nil // release memory reference
+	c.clips = c.clips[:top]
 	return ret
 }
 
@@ -77,5 +79,11 @@ func (i *ClipItem) Intersect(p fyne.Position, s fyne.Size) *ClipItem {
 	if p.Y+s.Height > i.pos.Y+i.size.Height {
 		ret.size.Height = (i.pos.Y + i.size.Height) - ret.pos.Y
 	}
+
+	if ret.size.Width < 0 || ret.size.Height < 0 {
+		ret.size = fyne.NewSize(0, 0)
+		return ret
+	}
+
 	return ret
 }

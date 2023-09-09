@@ -209,6 +209,14 @@ var glfnMap = map[glfn]func(c call) (ret uintptr){
 		ret, _, _ = syscall.Syscall(glGetError.Addr(), 0, 0, 0, 0)
 		return ret
 	},
+	glfnGetProgramInfoLog: func(c call) (ret uintptr) {
+		syscall.Syscall6(glGetProgramInfoLog.Addr(), 4, c.args.a0, c.args.a1, 0, uintptr(c.parg), 0, 0)
+		return
+	},
+	glfnGetProgramiv: func(c call) (ret uintptr) {
+		syscall.Syscall(glGetProgramiv.Addr(), 3, c.args.a0, c.args.a1, uintptr(unsafe.Pointer(&ret)))
+		return
+	},
 	glfnGetShaderInfoLog: func(c call) (ret uintptr) {
 		syscall.Syscall6(glGetShaderInfoLog.Addr(), 4, c.args.a0, c.args.a1, 0, uintptr(c.parg), 0, 0)
 		return
@@ -255,6 +263,10 @@ var glfnMap = map[glfn]func(c call) (ret uintptr){
 	},
 	glfnUniform1f: func(c call) (ret uintptr) {
 		syscall.Syscall6(glUniform1f.Addr(), 2, c.args.a0, c.args.a1, c.args.a2, c.args.a3, c.args.a4, c.args.a5)
+		return
+	},
+	glfnUniform2f: func(c call) (ret uintptr) {
+		syscall.Syscall6(glUniform2f.Addr(), 3, c.args.a0, c.args.a1, c.args.a2, c.args.a3, c.args.a4, c.args.a5)
 		return
 	},
 	glfnUniform4f: func(c call) (ret uintptr) {
@@ -329,11 +341,14 @@ var (
 	glGenVertexArrays         = libGLESv2.NewProc("glGenVertexArrays")
 	glGetAttribLocation       = libGLESv2.NewProc("glGetAttribLocation")
 	glGetError                = libGLESv2.NewProc("glGetError")
+	glGetProgramInfoLog       = libGLESv2.NewProc("glGetProgramInfoLog")
+	glGetProgramiv            = libGLESv2.NewProc("glGetProgramiv")
 	glGetShaderInfoLog        = libGLESv2.NewProc("glGetShaderInfoLog")
 	glGetShaderSource         = libGLESv2.NewProc("glGetShaderSource")
 	glGetShaderiv             = libGLESv2.NewProc("glGetShaderiv")
 	glGetTexParameteriv       = libGLESv2.NewProc("glGetTexParameteriv")
 	glGetUniformLocation      = libGLESv2.NewProc("glGetUniformLocation")
+	glPixelStorei             = libGLESv2.NewProc("glPixelStorei")
 	glLinkProgram             = libGLESv2.NewProc("glLinkProgram")
 	glReadPixels              = libGLESv2.NewProc("glReadPixels")
 	glScissor                 = libGLESv2.NewProc("glScissor")
@@ -341,6 +356,7 @@ var (
 	glTexImage2D              = libGLESv2.NewProc("glTexImage2D")
 	glTexParameteri           = libGLESv2.NewProc("glTexParameteri")
 	glUniform1f               = libGLESv2.NewProc("glUniform1f")
+	glUniform2f               = libGLESv2.NewProc("glUniform2f")
 	glUniform4f               = libGLESv2.NewProc("glUniform4f")
 	glUniform4fv              = libGLESv2.NewProc("glUniform4fv")
 	glUseProgram              = libGLESv2.NewProc("glUseProgram")

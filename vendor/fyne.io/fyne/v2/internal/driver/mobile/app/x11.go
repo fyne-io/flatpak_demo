@@ -15,6 +15,7 @@ than screens with touch panels.
 
 /*
 #cgo LDFLAGS: -lEGL -lGLESv2 -lX11
+#cgo freebsd CFLAGS: -I/usr/local/include/
 
 void createWindow(void);
 void processEvents(void);
@@ -77,6 +78,10 @@ func main(f func(App)) {
 			theApp.publishResult <- PublishResult{}
 		}
 	}
+}
+
+func GoBack() {
+	// When simulating mobile there are no other activities open (and we can't just force background)
 }
 
 //export onResize

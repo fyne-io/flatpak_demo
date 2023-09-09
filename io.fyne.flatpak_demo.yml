@@ -35,6 +35,5 @@ modules:
         - install -Dm00644 $FLATPAK_ID.desktop $FLATPAK_DEST/share/applications/$FLATPAK_ID.desktop
         - install -Dm00644 $FLATPAK_ID.appdata.xml $FLATPAK_DEST/share/appdata/$FLATPAK_ID.appdata.xml
       sources:
-        - type: archive
-          url: "https://github.com/fyne-io/flatpak_demo/archive/refs/tags/v1.2.0.tar.gz"
-          sha256: bd892edacf56af9d443fd7f9f4825a33165a46d4d7bb56aee3de690144798c18
+        - type: dir
+          path: ./

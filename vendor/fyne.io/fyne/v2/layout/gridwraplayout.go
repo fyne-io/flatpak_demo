@@ -25,11 +25,12 @@ func NewGridWrapLayout(size fyne.Size) fyne.Layout {
 // For a GridWrapLayout this will attempt to lay all the child objects in a row
 // and wrap to a new row if the size is not large enough.
 func (g *gridWrapLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+	padding := theme.Padding()
 	g.colCount = 1
-	g.rowCount = 1
+	g.rowCount = 0
 
 	if size.Width > g.CellSize.Width {
-		g.colCount = int(math.Floor(float64(size.Width+theme.Padding()) / float64(g.CellSize.Width+theme.Padding())))
+		g.colCount = int(math.Floor(float64(size.Width+padding) / float64(g.CellSize.Width+padding)))
 	}
 
 	i, x, y := 0, float32(0), float32(0)
@@ -38,17 +39,18 @@ func (g *gridWrapLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 			continue
 		}
 
+		if i%g.colCount == 0 {
+			g.rowCount++
+		}
+
 		child.Move(fyne.NewPos(x, y))
 		child.Resize(g.CellSize)
 
 		if (i+1)%g.colCount == 0 {
 			x = 0
-			y += g.CellSize.Height + theme.Padding()
-			if i > 0 {
-				g.rowCount++
-			}
+			y += g.CellSize.Height + padding
 		} else {
-			x += g.CellSize.Width + theme.Padding()
+			x += g.CellSize.Width + padding
 		}
 		i++
 	}
@@ -59,6 +61,10 @@ func (g *gridWrapLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 // layout has no padding. The returned size does not take into account the number
 // of columns as this layout re-flows dynamically.
 func (g *gridWrapLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+	rows := g.rowCount
+	if rows < 1 {
+		rows = 1
+	}
 	return fyne.NewSize(g.CellSize.Width,
-		(g.CellSize.Height*float32(g.rowCount))+(float32(g.rowCount-1)*theme.Padding()))
+		(g.CellSize.Height*float32(rows))+(float32(rows-1)*theme.Padding()))
 }

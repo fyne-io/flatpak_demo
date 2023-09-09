@@ -23,6 +23,11 @@ type Hyperlink struct {
 	Wrapping  fyne.TextWrap  // The wrapping of the Text
 	TextStyle fyne.TextStyle // The style of the hyperlink text
 
+	// OnTapped overrides the default `fyne.OpenURL` call when the link is tapped
+	//
+	// Since: 2.2
+	OnTapped func() `json:"-"`
+
 	focused, hovered bool
 	provider         *RichText
 }
@@ -55,7 +60,7 @@ func (hl *Hyperlink) CreateRenderer() fyne.WidgetRenderer {
 	focus.StrokeColor = theme.FocusColor()
 	focus.StrokeWidth = 2
 	focus.Hide()
-	under := canvas.NewRectangle(theme.PrimaryColor())
+	under := canvas.NewRectangle(theme.HyperlinkColor())
 	under.Hide()
 	return &hyperlinkRenderer{hl: hl, objects: []fyne.CanvasObject{hl.provider, focus, under}, focus: focus, under: under}
 }
@@ -152,6 +157,11 @@ func (hl *Hyperlink) SetURLFromString(str string) error {
 
 // Tapped is called when a pointer tapped event is captured and triggers any change handler
 func (hl *Hyperlink) Tapped(*fyne.PointEvent) {
+	if hl.OnTapped != nil {
+		hl.OnTapped()
+		return
+	}
+
 	hl.openURL()
 }
 
@@ -162,7 +172,7 @@ func (hl *Hyperlink) TypedRune(rune) {
 // TypedKey is a hook called by the input handling logic on key events if this object is focused.
 func (hl *Hyperlink) TypedKey(ev *fyne.KeyEvent) {
 	if ev.Name == fyne.KeySpace {
-		hl.openURL()
+		hl.Tapped(nil)
 	}
 }
 
@@ -180,7 +190,7 @@ func (hl *Hyperlink) syncSegments() {
 	hl.provider.Segments = []RichTextSegment{&TextSegment{
 		Style: RichTextStyle{
 			Alignment: hl.Alignment,
-			ColorName: theme.ColorNamePrimary,
+			ColorName: theme.ColorNameHyperlink,
 			Inline:    true,
 			TextStyle: hl.TextStyle,
 		},
@@ -203,10 +213,10 @@ func (r *hyperlinkRenderer) Destroy() {
 
 func (r *hyperlinkRenderer) Layout(s fyne.Size) {
 	r.hl.provider.Resize(s)
-	r.focus.Move(fyne.NewPos(theme.Padding(), theme.Padding()))
-	r.focus.Resize(fyne.NewSize(s.Width-theme.Padding()*2, s.Height-theme.Padding()*2))
-	r.under.Move(fyne.NewPos(theme.Padding()*2, s.Height-theme.Padding()*2))
-	r.under.Resize(fyne.NewSize(s.Width-theme.Padding()*4, 1))
+	r.focus.Move(fyne.NewPos(theme.InnerPadding()/2, theme.InnerPadding()/2))
+	r.focus.Resize(fyne.NewSize(s.Width-theme.InnerPadding(), s.Height-theme.InnerPadding()))
+	r.under.Move(fyne.NewPos(theme.InnerPadding(), s.Height-theme.InnerPadding()))
+	r.under.Resize(fyne.NewSize(s.Width-theme.InnerPadding()*2, 1))
 }
 
 func (r *hyperlinkRenderer) MinSize() fyne.Size {
@@ -221,6 +231,6 @@ func (r *hyperlinkRenderer) Refresh() {
 	r.hl.provider.Refresh()
 	r.focus.StrokeColor = theme.FocusColor()
 	r.focus.Hidden = !r.hl.focused
-	r.under.StrokeColor = theme.PrimaryColor()
+	r.under.StrokeColor = theme.HyperlinkColor()
 	r.under.Hidden = !r.hl.hovered
 }

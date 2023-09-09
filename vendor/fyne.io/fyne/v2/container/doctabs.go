@@ -1,6 +1,8 @@
 package container
 
 import (
+	"image/color"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/layout"
@@ -56,25 +58,17 @@ func (t *DocTabs) CreateRenderer() fyne.WidgetRenderer {
 	t.ExtendBaseWidget(t)
 	r := &docTabsRenderer{
 		baseTabsRenderer: baseTabsRenderer{
-			bar:         &fyne.Container{},
-			divider:     canvas.NewRectangle(theme.ShadowColor()),
-			indicator:   canvas.NewRectangle(theme.PrimaryColor()),
-			buttonCache: make(map[*TabItem]*tabButton),
+			bar:       &fyne.Container{},
+			divider:   canvas.NewRectangle(theme.ShadowColor()),
+			indicator: canvas.NewRectangle(theme.PrimaryColor()),
 		},
 		docTabs:  t,
-		scroller: NewScroll(nil),
+		scroller: NewScroll(&fyne.Container{}),
 	}
 	r.action = r.buildAllTabsButton()
 	r.create = r.buildCreateTabsButton()
 	r.box = NewHBox(r.create, r.action)
-	var lastX, lastY float32
 	r.scroller.OnScrolled = func(offset fyne.Position) {
-		// FIXME OnScrolled can be called when the offset hasn't changed (#1868)
-		if offset.X == lastX && offset.Y == lastY {
-			return
-		}
-		lastX = offset.X
-		lastY = offset.Y
 		r.updateIndicator(false)
 	}
 	r.updateAllTabs()
@@ -83,6 +77,34 @@ func (t *DocTabs) CreateRenderer() fyne.WidgetRenderer {
 	r.updateIndicator(false)
 	r.applyTheme(t)
 	return r
+}
+
+// DisableIndex disables the TabItem at the specified index.
+//
+// Since: 2.3
+func (t *DocTabs) DisableIndex(i int) {
+	disableIndex(t, i)
+}
+
+// DisableItem disables the specified TabItem.
+//
+// Since: 2.3
+func (t *DocTabs) DisableItem(item *TabItem) {
+	disableItem(t, item)
+}
+
+// EnableIndex enables the TabItem at the specified index.
+//
+// Since: 2.3
+func (t *DocTabs) EnableIndex(i int) {
+	enableIndex(t, i)
+}
+
+// EnableItem enables the specified TabItem.
+//
+// Since: 2.3
+func (t *DocTabs) EnableItem(item *TabItem) {
+	enableItem(t, item)
 }
 
 // Hide hides the widget.
@@ -138,7 +160,7 @@ func (t *DocTabs) SelectedIndex() int {
 	return t.current
 }
 
-// SetItems sets the container’s items and refreshes.
+// SetItems sets the containers items and refreshes.
 func (t *DocTabs) SetItems(items []*TabItem) {
 	setItems(t, items)
 	t.Refresh()
@@ -156,7 +178,6 @@ func (t *DocTabs) SetTabLocation(l TabLocation) {
 func (t *DocTabs) Show() {
 	t.BaseWidget.Show()
 	t.SelectIndex(t.current)
-	t.Refresh()
 }
 
 func (t *DocTabs) close(item *TabItem) {
@@ -223,7 +244,12 @@ func (r *docTabsRenderer) Layout(size fyne.Size) {
 	r.updateCreateTab()
 	r.updateTabs()
 	r.layout(r.docTabs, size)
+
+	// lay out buttons before updating indicator, which is relative to their position
+	buttons := r.scroller.Content.(*fyne.Container)
+	buttons.Layout.Layout(buttons.Objects, buttons.Size())
 	r.updateIndicator(r.docTabs.transitioning())
+
 	if r.docTabs.transitioning() {
 		r.docTabs.setTransitioning(false)
 	}
@@ -289,8 +315,8 @@ func (r *docTabsRenderer) buildCreateTabsButton() *widget.Button {
 	return create
 }
 
-func (r *docTabsRenderer) buildTabButtons(count int) *fyne.Container {
-	buttons := &fyne.Container{}
+func (r *docTabsRenderer) buildTabButtons(count int, buttons *fyne.Container) {
+	buttons.Objects = nil
 
 	var iconPos buttonIconPosition
 	if fyne.CurrentDevice().IsMobile() {
@@ -314,15 +340,13 @@ func (r *docTabsRenderer) buildTabButtons(count int) *fyne.Container {
 
 	for i := 0; i < count; i++ {
 		item := r.docTabs.Items[i]
-		button, ok := r.buttonCache[item]
-		if !ok {
-			button = &tabButton{
+		if item.button == nil {
+			item.button = &tabButton{
 				onTapped: func() { r.docTabs.Select(item) },
 				onClosed: func() { r.docTabs.close(item) },
 			}
-			r.buttonCache[item] = button
 		}
-
+		button := item.button
 		button.icon = item.Icon
 		button.iconPosition = iconPos
 		if i == r.docTabs.current {
@@ -335,7 +359,6 @@ func (r *docTabsRenderer) buildTabButtons(count int) *fyne.Container {
 		button.Refresh()
 		buttons.Objects = append(buttons.Objects, button)
 	}
-	return buttons
 }
 
 func (r *docTabsRenderer) scrollToSelected() {
@@ -359,11 +382,12 @@ func (r *docTabsRenderer) scrollToSelected() {
 		}
 	}
 	r.scroller.Offset = offset
+	r.updateIndicator(false)
 }
 
 func (r *docTabsRenderer) updateIndicator(animate bool) {
 	if r.docTabs.current < 0 {
-		r.indicator.Hide()
+		r.indicator.FillColor = color.Transparent
 		r.indicator.Refresh()
 		return
 	}
@@ -377,11 +401,19 @@ func (r *docTabsRenderer) updateIndicator(animate bool) {
 		if a := r.action; a != nil {
 			selectedPos = a.Position()
 			selectedSize = a.Size()
+			minSize := a.MinSize()
+			if minSize.Width > selectedSize.Width {
+				selectedSize = minSize
+			}
 		}
 	} else {
 		selected := buttons[r.docTabs.current]
 		selectedPos = selected.Position()
 		selectedSize = selected.Size()
+		minSize := selected.MinSize()
+		if minSize.Width > selectedSize.Width {
+			selectedSize = minSize
+		}
 	}
 
 	scrollOffset := r.scroller.Offset
@@ -414,7 +446,7 @@ func (r *docTabsRenderer) updateIndicator(animate bool) {
 		indicatorPos.Y = 0
 	}
 	if indicatorSize.Width < 0 || indicatorSize.Height < 0 {
-		r.indicator.Hide()
+		r.indicator.FillColor = color.Transparent
 		r.indicator.Refresh()
 		return
 	}
@@ -441,8 +473,7 @@ func (r *docTabsRenderer) updateCreateTab() {
 
 func (r *docTabsRenderer) updateTabs() {
 	tabCount := len(r.docTabs.Items)
-
-	r.scroller.Content = r.buildTabButtons(tabCount)
+	r.buildTabButtons(tabCount, r.scroller.Content.(*fyne.Container))
 
 	// Set layout of tab bar containing tab buttons and overflow action
 	if r.docTabs.location == TabLocationLeading || r.docTabs.location == TabLocationTrailing {

@@ -1,23 +1,21 @@
-//go:build !ci && !android && !ios
-// +build !ci,!android,!ios
+//go:build !ci && !js && !android && !ios && !wasm && !test_web_driver
+// +build !ci,!js,!android,!ios,!wasm,!test_web_driver
 
 package app
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
 
+	"golang.org/x/sys/execabs"
 	"golang.org/x/sys/windows/registry"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
-
-	"golang.org/x/sys/execabs"
 )
 
 const notificationTemplate = `$title = "%s"
@@ -64,7 +62,7 @@ func rootConfigDir() string {
 }
 
 func (a *fyneApp) OpenURL(url *url.URL) error {
-	cmd := a.exec("rundll32", "url.dll,FileProtocolHandler", url.String())
+	cmd := execabs.Command("rundll32", "url.dll,FileProtocolHandler", url.String())
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	return cmd.Run()
 }
@@ -74,13 +72,25 @@ var scriptNum = 0
 func (a *fyneApp) SendNotification(n *fyne.Notification) {
 	title := escapeNotificationString(n.Title)
 	content := escapeNotificationString(n.Content)
-	appID := a.UniqueID() // TODO once we have an app name compiled in this could be improved
+	appID := a.UniqueID()
 	if appID == "" || strings.Index(appID, "missing-id") == 0 {
-		appID = "Fyne app"
+		appID = a.Metadata().Name
 	}
 
 	script := fmt.Sprintf(notificationTemplate, title, content, appID)
 	go runScript("notify", script)
+}
+
+// SetSystemTrayMenu creates a system tray item and attaches the specified menu.
+// By default this will use the application icon.
+func (a *fyneApp) SetSystemTrayMenu(menu *fyne.Menu) {
+	a.Driver().(systrayDriver).SetSystemTrayMenu(menu)
+}
+
+// SetSystemTrayIcon sets a custom image for the system tray icon.
+// You should have previously called `SetSystemTrayMenu` to initialise the menu icon.
+func (a *fyneApp) SetSystemTrayIcon(icon fyne.Resource) {
+	a.Driver().(systrayDriver).SetSystemTrayIcon(icon)
 }
 
 func escapeNotificationString(in string) string {
@@ -94,7 +104,7 @@ func runScript(name, script string) {
 	fileName := fmt.Sprintf("fyne-%s-%s-%d.ps1", appID, name, scriptNum)
 
 	tmpFilePath := filepath.Join(os.TempDir(), fileName)
-	err := ioutil.WriteFile(tmpFilePath, []byte(script), 0600)
+	err := os.WriteFile(tmpFilePath, []byte(script), 0600)
 	if err != nil {
 		fyne.LogError("Could not write script to show notification", err)
 		return

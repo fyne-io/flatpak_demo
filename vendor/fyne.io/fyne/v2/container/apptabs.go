@@ -50,10 +50,9 @@ func (t *AppTabs) CreateRenderer() fyne.WidgetRenderer {
 	t.BaseWidget.ExtendBaseWidget(t)
 	r := &appTabsRenderer{
 		baseTabsRenderer: baseTabsRenderer{
-			bar:         &fyne.Container{},
-			divider:     canvas.NewRectangle(theme.ShadowColor()),
-			indicator:   canvas.NewRectangle(theme.PrimaryColor()),
-			buttonCache: make(map[*TabItem]*tabButton),
+			bar:       &fyne.Container{},
+			divider:   canvas.NewRectangle(theme.ShadowColor()),
+			indicator: canvas.NewRectangle(theme.PrimaryColor()),
 		},
 		appTabs: t,
 	}
@@ -87,6 +86,34 @@ func (t *AppTabs) CurrentTab() *TabItem {
 // Deprecated: Use `AppTabs.SelectedIndex() int` instead.
 func (t *AppTabs) CurrentTabIndex() int {
 	return t.current
+}
+
+// DisableIndex disables the TabItem at the specified index.
+//
+// Since: 2.3
+func (t *AppTabs) DisableIndex(i int) {
+	disableIndex(t, i)
+}
+
+// DisableItem disables the specified TabItem.
+//
+// Since: 2.3
+func (t *AppTabs) DisableItem(item *TabItem) {
+	disableItem(t, item)
+}
+
+// EnableIndex enables the TabItem at the specified index.
+//
+// Since: 2.3
+func (t *AppTabs) EnableIndex(i int) {
+	enableIndex(t, i)
+}
+
+// EnableItem enables the specified TabItem.
+//
+// Since: 2.3
+func (t *AppTabs) EnableItem(item *TabItem) {
+	enableItem(t, item)
 }
 
 // ExtendBaseWidget is used by an extending widget to make use of BaseWidget functionality.
@@ -176,7 +203,7 @@ func (t *AppTabs) SelectedIndex() int {
 	return t.current
 }
 
-// SetItems sets the container’s items and refreshes.
+// SetItems sets the containers items and refreshes.
 func (t *AppTabs) SetItems(items []*TabItem) {
 	setItems(t, items)
 	t.Refresh()
@@ -194,7 +221,6 @@ func (t *AppTabs) SetTabLocation(l TabLocation) {
 func (t *AppTabs) Show() {
 	t.BaseWidget.Show()
 	t.SelectIndex(t.current)
-	t.Refresh()
 }
 
 func (t *AppTabs) onUnselected() func(*TabItem) {
@@ -250,18 +276,22 @@ type appTabsRenderer struct {
 
 func (r *appTabsRenderer) Layout(size fyne.Size) {
 	// Try render as many tabs as will fit, others will appear in the overflow
-	for i := len(r.appTabs.Items); i > 0; i-- {
-		r.updateTabs(i)
-		barMin := r.bar.MinSize()
-		if r.appTabs.location == TabLocationLeading || r.appTabs.location == TabLocationTrailing {
-			if barMin.Height <= size.Height {
-				// Tab bar is short enough to fit
-				break
-			}
-		} else {
-			if barMin.Width <= size.Width {
-				// Tab bar is thin enough to fit
-				break
+	if len(r.appTabs.Items) == 0 {
+		r.updateTabs(0)
+	} else {
+		for i := len(r.appTabs.Items); i > 0; i-- {
+			r.updateTabs(i)
+			barMin := r.bar.MinSize()
+			if r.appTabs.location == TabLocationLeading || r.appTabs.location == TabLocationTrailing {
+				if barMin.Height <= size.Height {
+					// Tab bar is short enough to fit
+					break
+				}
+			} else {
+				if barMin.Width <= size.Width {
+					// Tab bar is thin enough to fit
+					break
+				}
 			}
 		}
 	}
@@ -339,14 +369,12 @@ func (r *appTabsRenderer) buildTabButtons(count int) *fyne.Container {
 
 	for i := 0; i < count; i++ {
 		item := r.appTabs.Items[i]
-		button, ok := r.buttonCache[item]
-		if !ok {
-			index := i // capture
-			button = &tabButton{
-				onTapped: func() { r.appTabs.SelectIndex(index) },
+		if item.button == nil {
+			item.button = &tabButton{
+				onTapped: func() { r.appTabs.Select(item) },
 			}
-			r.buttonCache[item] = button
 		}
+		button := item.button
 		button.icon = item.Icon
 		button.iconPosition = iconPos
 		if i == r.appTabs.current {
@@ -410,7 +438,7 @@ func (r *appTabsRenderer) updateTabs(max int) {
 	// Set overflow action
 	if tabCount <= max {
 		r.action.Hide()
-		r.bar.Layout = layout.NewMaxLayout()
+		r.bar.Layout = layout.NewStackLayout()
 	} else {
 		tabCount = max
 		r.action.Show()

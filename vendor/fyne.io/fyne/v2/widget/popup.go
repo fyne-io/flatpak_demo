@@ -69,6 +69,13 @@ func (p *PopUp) ShowAtPosition(pos fyne.Position) {
 	p.Show()
 }
 
+// ShowAtRelativePosition shows this pop-up at the given position relative to stated object.
+//
+// Since 2.4
+func (p *PopUp) ShowAtRelativePosition(rel fyne.Position, to fyne.CanvasObject) {
+	withRelativePosition(rel, to, p.ShowAtPosition)
+}
+
 // Tapped is called when the user taps the popUp background - if not modal then dismiss this widget
 func (p *PopUp) Tapped(_ *fyne.PointEvent) {
 	if !p.modal {
@@ -92,7 +99,7 @@ func (p *PopUp) MinSize() fyne.Size {
 // CreateRenderer is a private method to Fyne which links this widget to its renderer
 func (p *PopUp) CreateRenderer() fyne.WidgetRenderer {
 	p.ExtendBaseWidget(p)
-	background := canvas.NewRectangle(theme.BackgroundColor())
+	background := canvas.NewRectangle(theme.OverlayBackgroundColor())
 	if p.modal {
 		underlay := canvas.NewRectangle(theme.ShadowColor())
 		objects := []fyne.CanvasObject{underlay, background, p.Content}
@@ -113,6 +120,16 @@ func (p *PopUp) CreateRenderer() fyne.WidgetRenderer {
 // It will then display the popup on the passed canvas.
 func ShowPopUpAtPosition(content fyne.CanvasObject, canvas fyne.Canvas, pos fyne.Position) {
 	newPopUp(content, canvas).ShowAtPosition(pos)
+}
+
+// ShowPopUpAtRelativePosition shows a new popUp for the specified content at the given position relative to stated object.
+// It will then display the popup on the passed canvas.
+//
+// Since 2.4
+func ShowPopUpAtRelativePosition(content fyne.CanvasObject, canvas fyne.Canvas, rel fyne.Position, to fyne.CanvasObject) {
+	withRelativePosition(rel, to, func(pos fyne.Position) {
+		ShowPopUpAtPosition(content, canvas, pos)
+	})
 }
 
 func newPopUp(content fyne.CanvasObject, canvas fyne.Canvas) *PopUp {
@@ -156,11 +173,11 @@ type popUpBaseRenderer struct {
 }
 
 func (r *popUpBaseRenderer) padding() fyne.Size {
-	return fyne.NewSize(theme.Padding()*2, theme.Padding()*2)
+	return fyne.NewSize(theme.InnerPadding(), theme.InnerPadding())
 }
 
 func (r *popUpBaseRenderer) offset() fyne.Position {
-	return fyne.NewPos(theme.Padding(), theme.Padding())
+	return fyne.NewPos(theme.InnerPadding()/2, theme.InnerPadding()/2)
 }
 
 type popUpRenderer struct {
@@ -197,7 +214,7 @@ func (r *popUpRenderer) MinSize() fyne.Size {
 }
 
 func (r *popUpRenderer) Refresh() {
-	r.background.FillColor = theme.BackgroundColor()
+	r.background.FillColor = theme.OverlayBackgroundColor()
 	expectedContentSize := r.popUp.innerSize.Max(r.popUp.MinSize()).Subtract(r.padding())
 	shouldRelayout := r.popUp.Content.Size() != expectedContentSize
 
@@ -243,7 +260,7 @@ func (r *modalPopUpRenderer) MinSize() fyne.Size {
 
 func (r *modalPopUpRenderer) Refresh() {
 	r.underlay.FillColor = theme.ShadowColor()
-	r.background.FillColor = theme.BackgroundColor()
+	r.background.FillColor = theme.OverlayBackgroundColor()
 	expectedContentSize := r.popUp.innerSize.Max(r.popUp.MinSize()).Subtract(r.padding())
 	shouldLayout := r.popUp.Content.Size() != expectedContentSize
 
@@ -255,4 +272,17 @@ func (r *modalPopUpRenderer) Refresh() {
 	}
 	r.popUp.Content.Refresh()
 	r.background.Refresh()
+}
+
+func withRelativePosition(rel fyne.Position, to fyne.CanvasObject, f func(position fyne.Position)) {
+	d := fyne.CurrentApp().Driver()
+	c := d.CanvasForObject(to)
+	if c == nil {
+		fyne.LogError("Could not locate parent object to display relative to", nil)
+		f(rel)
+		return
+	}
+
+	pos := d.AbsolutePositionForObject(to).Add(rel)
+	f(pos)
 }

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 
 	"fyne.io/fyne/v2"
@@ -17,8 +17,8 @@ func main() {
 	a := app.NewWithID("io.fyne.flatpak_demo")
 	w := a.NewWindow("Flatpak Demo")
 
-	markdown := widget.NewMultiLineEntry()
-	preview := widget.NewRichText()
+	markdown := &widget.Entry{MultiLine: true, Wrapping: fyne.TextWrapWord}
+	preview := &widget.RichText{Wrapping: fyne.TextWrapWord}
 	markdown.OnChanged = preview.ParseMarkdown
 
 	open := &widget.Button{Text: "Open file", Icon: theme.ContentAddIcon(), OnTapped: func() {
@@ -30,7 +30,7 @@ func main() {
 				return
 			}
 
-			text, err := ioutil.ReadAll(file)
+			text, err := io.ReadAll(file)
 			if err != nil {
 				log.Println(err)
 				return

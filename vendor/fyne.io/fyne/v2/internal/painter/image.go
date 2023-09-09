@@ -1,154 +1,47 @@
 package painter
 
 import (
-	"bytes"
-	"errors"
 	"image"
 	_ "image/jpeg" // avoid users having to import when using image widget
 	_ "image/png"  // avoid the same for PNG images
-	"io"
-	"os"
-	"path/filepath"
-	"strings"
+
+	"golang.org/x/image/draw"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
-	"fyne.io/fyne/v2/internal"
-	"fyne.io/fyne/v2/internal/cache"
-
-	"github.com/srwiley/oksvg"
-	"github.com/srwiley/rasterx"
-	"golang.org/x/image/draw"
 )
 
-var aspects = make(map[interface{}]float32, 16)
-
-// GetAspect looks up an aspect ratio of an image
-func GetAspect(img *canvas.Image) float32 {
-	aspect := float32(0.0)
-	if img.Resource != nil {
-		aspect = aspects[img.Resource.Name()]
-	} else if img.File != "" {
-		aspect = aspects[img.File]
+// PaintImage renders a given fyne Image to a Go standard image
+// If a fyne.Canvas is given and the image’s fill mode is “fill original” the image’s min size has
+// to fit its original size. If it doesn’t, PaintImage does not paint the image but adjusts its min size.
+// The image will then be painted on the next frame because of the min size change.
+func PaintImage(img *canvas.Image, c fyne.Canvas, width, height int) image.Image {
+	if img.Size().IsZero() && c == nil { // an image without size or canvas won't get rendered unless we setup
+		img.Resize(fyne.NewSize(float32(width), float32(height)))
+	}
+	dst, err := paintImage(img, width, height)
+	if err != nil {
+		fyne.LogError("failed to paint image", err)
 	}
 
-	if aspect == 0 {
-		aspect = aspects[img]
-	}
-
-	return aspect
+	return dst
 }
 
-// PaintImage renders a given fyne Image to a Go standard image
-func PaintImage(img *canvas.Image, c fyne.Canvas, width, height int) image.Image {
+func paintImage(img *canvas.Image, width, height int) (dst image.Image, err error) {
 	if width <= 0 || height <= 0 {
-		return nil
+		return
 	}
 
-	switch {
-	case img.File != "" || img.Resource != nil:
-		var (
-			file  io.Reader
-			name  string
-			isSVG bool
-		)
-		if img.Resource != nil {
-			name = img.Resource.Name()
-			file = bytes.NewReader(img.Resource.Content())
-			isSVG = IsResourceSVG(img.Resource)
-		} else {
-			name = img.File
-			handle, err := os.Open(img.File)
-			if err != nil {
-				fyne.LogError("image load error", err)
-				return nil
-			}
-			defer handle.Close()
-			file = handle
-			isSVG = isFileSVG(img.File)
-		}
-
-		if isSVG {
-			tex := cache.GetSvg(name, width, height)
-			if tex == nil {
-				// Not in cache, so load the item and add to cache
-
-				icon, err := oksvg.ReadIconStream(file)
-				if err != nil {
-					fyne.LogError("SVG Load error:", err)
-					return nil
-				}
-
-				origW, origH := int(icon.ViewBox.W), int(icon.ViewBox.H)
-				aspect := float32(origW) / float32(origH)
-				viewAspect := float32(width) / float32(height)
-
-				texW, texH := width, height
-				if viewAspect > aspect {
-					texW = int(float32(height) * aspect)
-				} else if viewAspect < aspect {
-					texH = int(float32(width) / aspect)
-				}
-
-				icon.SetTarget(0, 0, float64(texW), float64(texH))
-				// this is used by our render code, so let's set it to the file aspect
-				aspects[name] = aspect
-				// if the image specifies it should be original size we need at least that many pixels on screen
-				if img.FillMode == canvas.ImageFillOriginal {
-					if !checkImageMinSize(img, c, origW, origH) {
-						return nil
-					}
-				}
-
-				tex = image.NewNRGBA(image.Rect(0, 0, texW, texH))
-				scanner := rasterx.NewScannerGV(origW, origH, tex, tex.Bounds())
-				raster := rasterx.NewDasher(width, height, scanner)
-
-				err = drawSVGSafely(icon, raster)
-				if err != nil {
-					fyne.LogError("SVG Render error:", err)
-					return nil
-				}
-
-				cache.SetSvg(name, tex, width, height)
-			}
-
-			return tex
-		}
-
-		pixels, _, err := image.Decode(file)
-
-		if err != nil {
-			fyne.LogError("image err", err)
-
-			return nil
-		}
-		origSize := pixels.Bounds().Size()
-		// this is used by our render code, so let's set it to the file aspect
-		aspects[name] = float32(origSize.X) / float32(origSize.Y)
-		// if the image specifies it should be original size we need at least that many pixels on screen
-		if img.FillMode == canvas.ImageFillOriginal {
-			if !checkImageMinSize(img, c, origSize.X, origSize.Y) {
-				return nil
-			}
-		}
-
-		return scaleImage(pixels, width, height, img.ScaleMode)
-	case img.Image != nil:
-		origSize := img.Image.Bounds().Size()
-		// this is used by our render code, so let's set it to the file aspect
-		aspects[img] = float32(origSize.X) / float32(origSize.Y)
-		// if the image specifies it should be original size we need at least that many pixels on screen
-		if img.FillMode == canvas.ImageFillOriginal {
-			if !checkImageMinSize(img, c, origSize.X, origSize.Y) {
-				return nil
-			}
-		}
-
-		return scaleImage(img.Image, width, height, img.ScaleMode)
-	default:
-		return image.NewNRGBA(image.Rect(0, 0, 1, 1))
+	dst = img.Image
+	if dst == nil {
+		dst = image.NewNRGBA(image.Rect(0, 0, width, height))
 	}
+
+	size := dst.Bounds().Size()
+	if width != size.X || height != size.Y {
+		dst = scaleImage(dst, width, height, img.ScaleMode)
+	}
+	return
 }
 
 func scaleImage(pixels image.Image, scaledW, scaledH int, scale canvas.ImageScale) image.Image {
@@ -171,49 +64,4 @@ func scaleImage(pixels image.Image, scaledW, scaledH int, scale canvas.ImageScal
 		draw.CatmullRom.Scale(tex, scaledBounds, pixels, pixels.Bounds(), draw.Over, nil)
 	}
 	return tex
-}
-
-func drawSVGSafely(icon *oksvg.SvgIcon, raster *rasterx.Dasher) error {
-	var err error
-	defer func() {
-		if r := recover(); r != nil {
-			err = errors.New("crash when rendering svg")
-		}
-	}()
-	icon.Draw(raster, 1)
-
-	return err
-}
-
-func checkImageMinSize(img *canvas.Image, c fyne.Canvas, pixX, pixY int) bool {
-	dpSize := fyne.NewSize(internal.UnscaleInt(c, pixX), internal.UnscaleInt(c, pixY))
-
-	if img.MinSize() != dpSize {
-		img.SetMinSize(dpSize)
-		canvas.Refresh(img) // force the initial size to be respected
-		return false
-	}
-
-	return true
-}
-
-func isFileSVG(path string) bool {
-	return strings.ToLower(filepath.Ext(path)) == ".svg"
-}
-
-// IsResourceSVG checks if the resource is an SVG or not.
-func IsResourceSVG(res fyne.Resource) bool {
-	if strings.ToLower(filepath.Ext(res.Name())) == ".svg" {
-		return true
-	}
-
-	if len(res.Content()) < 5 {
-		return false
-	}
-
-	switch strings.ToLower(string(res.Content()[:5])) {
-	case "<!doc", "<?xml", "<svg ":
-		return true
-	}
-	return false
 }

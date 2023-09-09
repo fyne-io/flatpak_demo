@@ -142,6 +142,16 @@ type Context interface {
 	// http://www.khronos.org/opengles/sdk/docs/man3/html/glGetError.xhtml
 	GetError() Enum
 
+	// GetProgrami returns a parameter value for a shader.
+	//
+	// http://www.khronos.org/opengles/sdk/docs/man3/html/glGetProgramiv.xhtml
+	GetProgrami(p Program, pname Enum) int
+
+	// GetProgramInfoLog returns the information log for a shader.
+	//
+	// http://www.khronos.org/opengles/sdk/docs/man3/html/glGetProgramInfoLog.xhtml
+	GetProgramInfoLog(p Program) string
+
 	// GetShaderi returns a parameter value for a shader.
 	//
 	// http://www.khronos.org/opengles/sdk/docs/man3/html/glGetShaderiv.xhtml
@@ -193,6 +203,11 @@ type Context interface {
 	// http://www.khronos.org/opengles/sdk/docs/man3/html/glUniform.xhtml
 	Uniform1f(dst Uniform, v float32)
 
+	// Uniform2f writes a vec2 uniform variable.
+	//
+	// http://www.khronos.org/opengles/sdk/docs/man3/html/glUniform.xhtml
+	Uniform2f(dst Uniform, v0, v1 float32)
+
 	// Uniform4f writes a vec4 uniform variable.
 	//
 	// http://www.khronos.org/opengles/sdk/docs/man3/html/glUniform.xhtml
@@ -202,6 +217,7 @@ type Context interface {
 	//
 	// http://www.khronos.org/opengles/sdk/docs/man3/html/glUniform.xhtml
 	Uniform4fv(dst Uniform, src []float32)
+
 	// UseProgram sets the active program.
 	//
 	// http://www.khronos.org/opengles/sdk/docs/man3/html/glUseProgram.xhtml

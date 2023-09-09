@@ -1,6 +1,8 @@
 package widget
 
 import (
+	"strings"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/internal/widget"
@@ -28,9 +30,8 @@ var _ fyne.Widget = (*CheckGroup)(nil)
 // Since: 2.1
 func NewCheckGroup(options []string, changed func([]string)) *CheckGroup {
 	r := &CheckGroup{
-		DisableableWidget: DisableableWidget{},
-		Options:           options,
-		OnChanged:         changed,
+		Options:   options,
+		OnChanged: changed,
 	}
 	r.ExtendBaseWidget(r)
 	r.update()
@@ -73,6 +74,27 @@ func (r *CheckGroup) Refresh() {
 	r.update()
 	r.propertyLock.Unlock()
 	r.BaseWidget.Refresh()
+}
+
+// Remove removes the first occurrence of the specified option found from a CheckGroup widget.
+// Return true if an option was removed.
+//
+// Since: 2.3
+func (r *CheckGroup) Remove(option string) bool {
+	for i, o := range r.Options {
+		if strings.EqualFold(option, o) {
+			r.Options = append(r.Options[:i], r.Options[i+1:]...)
+			for j, s := range r.Selected {
+				if strings.EqualFold(option, s) {
+					r.Selected = append(r.Selected[:j], r.Selected[j+1:]...)
+					break
+				}
+			}
+			r.Refresh()
+			return true
+		}
+	}
+	return false
 }
 
 // SetSelected sets the checked options, it can be used to set a default option.
@@ -194,13 +216,15 @@ func (r *checkGroupRenderer) MinSize() fyne.Size {
 	height := float32(0)
 	for _, item := range r.items {
 		itemMin := item.MinSize()
-		if r.checks.Horizontal {
-			height = fyne.Max(height, itemMin.Height)
-			width += itemMin.Width
-		} else {
-			width = fyne.Max(width, itemMin.Width)
-			height += itemMin.Height
-		}
+
+		width = fyne.Max(width, itemMin.Width)
+		height = fyne.Max(height, itemMin.Height)
+	}
+
+	if r.checks.Horizontal {
+		width = width * float32(len(r.items))
+	} else {
+		height = height * float32(len(r.items))
 	}
 
 	return fyne.NewSize(width, height)
