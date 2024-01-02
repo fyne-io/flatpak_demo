@@ -48,6 +48,7 @@ public class GoNativeActivity extends NativeActivity {
 
 	private EditText mTextEdit;
 	private boolean ignoreKey = false;
+	private boolean keyboardUp = false;
 
 	public GoNativeActivity() {
 		super();
@@ -79,6 +80,7 @@ public class GoNativeActivity extends NativeActivity {
 
     static void showKeyboard(int keyboardType) {
         goNativeActivity.doShowKeyboard(keyboardType);
+        goNativeActivity.keyboardUp = true;
     }
 
     void doShowKeyboard(final int keyboardType) {
@@ -104,7 +106,7 @@ public class GoNativeActivity extends NativeActivity {
                     default:
                         Log.e("Fyne", "unknown keyboard type, use default");
                 }
-                mTextEdit.setImeOptions(imeOptions);
+                mTextEdit.setImeOptions(imeOptions|EditorInfo.IME_FLAG_NO_FULLSCREEN);
                 mTextEdit.setInputType(inputType);
 
                 mTextEdit.setOnEditorActionListener(new OnEditorActionListener() {
@@ -135,6 +137,7 @@ public class GoNativeActivity extends NativeActivity {
 
     static void hideKeyboard() {
         goNativeActivity.doHideKeyboard();
+        goNativeActivity.keyboardUp = false;
     }
 
     void doHideKeyboard() {
@@ -316,6 +319,11 @@ public class GoNativeActivity extends NativeActivity {
 
     @Override
     public void onBackPressed() {
+        if (goNativeActivity.keyboardUp) {
+            hideKeyboard();
+            return;
+        }
+
         // skip the default behaviour - we can call finishActivity if we want to go back
         backPressed();
     }

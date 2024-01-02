@@ -267,10 +267,12 @@ func stayRegistered() {
 		case sig := <-sc:
 			if sig == nil {
 				return // We get a nil signal when closing the window.
+			} else if len(sig.Body) < 3 {
+				return // malformed signal?
 			}
 
 			// sig.Body has the args, which are [name old_owner new_owner]
-			if sig.Body[2] != "" {
+			if s, ok := sig.Body[2].(string); ok && s != "" {
 				register()
 			}
 		case <-quitChan:
@@ -298,7 +300,11 @@ type tray struct {
 
 func (t *tray) createPropSpec() map[string]map[string]*prop.Prop {
 	t.lock.Lock()
-	t.lock.Unlock()
+	defer t.lock.Unlock()
+	id := t.title
+	if id == "" {
+		id = fmt.Sprintf("systray_%d", os.Getpid())
+	}
 	return map[string]map[string]*prop.Prop{
 		"org.kde.StatusNotifierItem": {
 			"Status": {
@@ -314,7 +320,7 @@ func (t *tray) createPropSpec() map[string]map[string]*prop.Prop {
 				Callback: nil,
 			},
 			"Id": {
-				Value:    t.title,
+				Value:    id,
 				Writable: false,
 				Emit:     prop.EmitTrue,
 				Callback: nil,

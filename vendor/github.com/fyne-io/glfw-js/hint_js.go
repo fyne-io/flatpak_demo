@@ -1,3 +1,4 @@
+//go:build js
 // +build js
 
 package glfw
@@ -11,7 +12,29 @@ const (
 	DepthBits
 	StencilBits
 	Samples
+
+	Focused
+	Iconified
+	Maximized
+	Visible
+	Hovered
 	Resizable
+	Decorated
+	Floating
+	AutoIconify
+	CenterCursor
+	TransparentFramebuffer
+	FocusOnShow
+	ScaleToMonitor
+
+	ClientAPI
+	ContextVersionMajor
+	ContextVersionMinor
+	ContextRobustness
+	ContextReleaseBehavior
+	OpenGLForwardCompatible
+	OpenGLDebugContext
+	OpenGLProfile
 
 	// goxjs/glfw-specific hints for WebGL.
 	PremultipliedAlpha

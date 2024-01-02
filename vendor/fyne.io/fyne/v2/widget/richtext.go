@@ -707,6 +707,7 @@ func (r *textRenderer) Refresh() {
 	r.obj.propertyLock.Unlock()
 
 	r.Layout(r.obj.Size())
+	canvas.Refresh(r.obj.super())
 }
 
 func (r *textRenderer) layoutRow(texts []fyne.CanvasObject, align fyne.TextAlign, xPos, yPos, lineWidth float32) (float32, float32) {
@@ -1017,8 +1018,8 @@ func lineBounds(seg *TextSegment, wrap fyne.TextWrap, trunc fyne.TextTruncation,
 			}
 		default:
 			if trunc == fyne.TextTruncateEllipsis {
-				txt := seg.Text[low:high]
-				end, full := truncateLimit(txt, seg.Visual().(*canvas.Text), int(measureWidth), []rune{'…'})
+				txt := []rune(seg.Text)[low:high]
+				end, full := truncateLimit(string(txt), seg.Visual().(*canvas.Text), int(measureWidth), []rune{'…'})
 				high = low + end
 				bounds = append(bounds, rowBoundary{[]RichTextSegment{seg}, reuse, low, high, !full})
 				reuse++
