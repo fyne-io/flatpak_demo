@@ -39,7 +39,7 @@ flatpak run --user io.fyne.flatpak_demo
 
 ## Vendoring
 It is possible to enable network access during the build, but it is recommended to not do so. If you want to publish the package to [flathub](https://flathub.org), it is even a requirement.
-For that reason, it is a good idea to vendor the project using `go mod vendor` and add the files to the git repo.
+For that reason, it is a good idea to vendor the project using `go mod vendor` and add the files to the git repo or use tools like [flatpak-go-mod](https://github.com/dennwc/flatpak-go-mod).
 
 ## Sandbox permissions
 The Flatpak applications run within a sandbox that restricts their communication with the host system. It is generally preferred to have the application be as strict as possible,
