@@ -689,7 +689,7 @@ func (f *FileDialog) SetDismissText(label string) {
 	f.dialog.win.Refresh()
 }
 
-// SetLocation tells this FileDirectory which location to display.
+// SetLocation tells this FileDialog which location to display.
 // This is normally called before the dialog is shown.
 //
 // Since: 1.4
@@ -703,13 +703,13 @@ func (f *FileDialog) SetLocation(u fyne.ListableURI) {
 // SetOnClosed sets a callback function that is called when
 // the dialog is closed.
 func (f *FileDialog) SetOnClosed(closed func()) {
-	if f.dialog == nil {
-		return
-	}
 	// If there is already a callback set, remember it and call both.
 	originalCallback := f.onClosedCallback
 
 	f.onClosedCallback = func(response bool) {
+		if f.dialog == nil {
+			return
+		}
 		closed()
 		if originalCallback != nil {
 			originalCallback(response)

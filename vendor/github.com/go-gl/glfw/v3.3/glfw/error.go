@@ -8,6 +8,7 @@ import "C"
 import (
 	"fmt"
 	"log"
+	"os"
 )
 
 // ErrorCode corresponds to an error code.
@@ -22,6 +23,7 @@ const (
 	invalidValue     ErrorCode = C.GLFW_INVALID_VALUE      // One of the parameters for the function was given an invalid value.
 	outOfMemory      ErrorCode = C.GLFW_OUT_OF_MEMORY      // A memory allocation failed.
 	platformError    ErrorCode = C.GLFW_PLATFORM_ERROR     // A platform-specific error occurred that does not match any of the more specific categories.
+	noWindowContext  ErrorCode = C.GLFW_NO_WINDOW_CONTEXT  // A window that does not have an OpenGL or OpenGL ES context was passed to a function that requires it to have one.
 )
 
 const (
@@ -83,6 +85,8 @@ func (e ErrorCode) String() string {
 		return "OutOfMemory"
 	case platformError:
 		return "PlatformError"
+	case noWindowContext:
+		return "NoWindowContext"
 	case APIUnavailable:
 		return "APIUnavailable"
 	case VersionUnavailable:
@@ -118,8 +122,8 @@ func goErrorCB(code C.int, desc *C.char) {
 	select {
 	case lastError <- err:
 	default:
-		fmt.Println("GLFW: An uncaught error has occurred:", err)
-		fmt.Println("GLFW: Please report this bug in the Go package immediately.")
+		fmt.Fprintln(os.Stderr, "go-gl/glfw: internal error: an uncaught error has occurred:", err)
+		fmt.Fprintln(os.Stderr, "go-gl/glfw: Please report this in the Go package issue tracker.")
 	}
 }
 
@@ -134,8 +138,8 @@ func init() {
 func flushErrors() {
 	err := fetchError()
 	if err != nil {
-		fmt.Println("GLFW: An uncaught error has occurred:", err)
-		fmt.Println("GLFW: Please report this bug in the Go package immediately.")
+		fmt.Fprintln(os.Stderr, "go-gl/glfw: internal error: an uncaught error has occurred:", err)
+		fmt.Fprintln(os.Stderr, "go-gl/glfw: Please report this in the Go package issue tracker.")
 	}
 }
 
@@ -169,11 +173,11 @@ func acceptError(codes ...ErrorCode) error {
 	case platformError:
 		log.Println(err)
 		return nil
-	case notInitialized, noCurrentContext, invalidEnum, invalidValue, outOfMemory:
+	case notInitialized, noCurrentContext, invalidEnum, invalidValue, outOfMemory, noWindowContext:
 		panic(err)
 	default:
-		fmt.Println("GLFW: An invalid error was not accepted by the caller:", err)
-		fmt.Println("GLFW: Please report this bug in the Go package immediately.")
+		fmt.Fprintln(os.Stderr, "go-gl/glfw: internal error: an invalid error was not accepted by the caller:", err)
+		fmt.Fprintln(os.Stderr, "go-gl/glfw: Please report this in the Go package issue tracker.")
 		panic(err)
 	}
 }

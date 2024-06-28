@@ -15,6 +15,8 @@ import (
 type (
 	GID = api.GID
 	Tag = loader.Tag
+	// Variation coordinates
+	VarCoord = tables.Coord
 )
 
 // Font represents one Opentype font file (or one sub font of a collection).
@@ -30,9 +32,10 @@ type Font struct {
 	hhea *tables.Hhea
 	vhea *tables.Vhea
 	vorg *tables.VORG // optional
-	cff  *cff.Font
-	post post // optional
-	svg  svg  // optional
+	cff  *cff.CFF     // optional
+	cff2 *cff.CFF2    // optional
+	post post         // optional
+	svg  svg          // optional
 
 	// Optional, only present in variable fonts
 
@@ -97,7 +100,7 @@ func NewFont(ld *loader.Loader) (*Font, error) {
 		return nil, err
 	}
 
-	out.head, err = LoadHeadTable(ld)
+	out.head, _, err = LoadHeadTable(ld, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -141,6 +144,7 @@ func NewFont(ld *loader.Loader) (*Font, error) {
 	out.sbix = newSbix(sbix)
 
 	out.cff, _ = loadCff(ld, int(maxp.NumGlyphs))
+	out.cff2, _ = loadCff2(ld, int(maxp.NumGlyphs), len(out.fvar))
 
 	raw, _ = ld.RawTable(loader.MustNewTag("post"))
 	post, _, _ := tables.ParsePost(raw)
@@ -153,10 +157,10 @@ func NewFont(ld *loader.Loader) (*Font, error) {
 	out.hhea, out.hmtx, _ = LoadHmtx(ld, int(maxp.NumGlyphs))
 	out.vhea, out.vmtx, _ = loadVmtx(ld, int(maxp.NumGlyphs))
 
-	if len(out.fvar) != 0 {
+	if axisCount := len(out.fvar); axisCount != 0 {
 		raw, _ = ld.RawTable(loader.MustNewTag("MVAR"))
 		mvar, _, _ := tables.ParseMVAR(raw)
-		out.mvar = newMvar(mvar)
+		out.mvar, _ = newMvar(mvar, axisCount)
 
 		raw, _ = ld.RawTable(loader.MustNewTag("gvar"))
 		gvar, _, _ := tables.ParseGvar(raw)
@@ -229,22 +233,23 @@ var bhedTag = loader.MustNewTag("bhed")
 
 // LoadHeadTable loads the table corresponding to the 'head' tag.
 // If a 'bhed' Apple table is present, it replaces the 'head' one.
-func LoadHeadTable(ld *loader.Loader) (tables.Head, error) {
-	var (
-		s   []byte
-		err error
-	)
+//
+// 'buffer' may be provided to reduce allocations; the return Head is guaranteed
+// not to retain any reference on 'buffer'.
+// If 'buffer' is nil or has not enough capacity, a new slice is allocated (and returned).
+func LoadHeadTable(ld *loader.Loader, buffer []byte) (tables.Head, []byte, error) {
+	var err error
 	// check 'bhed' first
 	if ld.HasTable(bhedTag) {
-		s, err = ld.RawTable(bhedTag)
+		buffer, err = ld.RawTableTo(bhedTag, buffer)
 	} else {
-		s, err = ld.RawTable(loader.MustNewTag("head"))
+		buffer, err = ld.RawTableTo(loader.MustNewTag("head"), buffer)
 	}
 	if err != nil {
-		return tables.Head{}, errors.New("missing required head (or bhed) table")
+		return tables.Head{}, nil, errors.New("missing required head (or bhed) table")
 	}
-	out, _, err := tables.ParseHead(s)
-	return out, err
+	out, _, err := tables.ParseHead(buffer)
+	return out, buffer, err
 }
 
 // return nil if no table is valid (or present)
@@ -268,7 +273,7 @@ func selectBitmapTable(ld *loader.Loader) bitmap {
 }
 
 // return nil if the table is missing or invalid
-func loadCff(ld *loader.Loader, numGlyphs int) (*cff.Font, error) {
+func loadCff(ld *loader.Loader, numGlyphs int) (*cff.CFF, error) {
 	raw, err := ld.RawTable(loader.MustNewTag("CFF "))
 	if err != nil {
 		return nil, err
@@ -282,6 +287,27 @@ func loadCff(ld *loader.Loader, numGlyphs int) (*cff.Font, error) {
 		return nil, fmt.Errorf("invalid number of glyphs in CFF table (%d != %d)", N, numGlyphs)
 	}
 	return cff, nil
+}
+
+// return nil if the table is missing or invalid
+func loadCff2(ld *loader.Loader, numGlyphs, axisCount int) (*cff.CFF2, error) {
+	raw, err := ld.RawTable(loader.MustNewTag("CFF2"))
+	if err != nil {
+		return nil, err
+	}
+	cff2, err := cff.ParseCFF2(raw)
+	if err != nil {
+		return nil, err
+	}
+
+	if N := len(cff2.Charstrings); N != numGlyphs {
+		return nil, fmt.Errorf("invalid number of glyphs in CFF table (%d != %d)", N, numGlyphs)
+	}
+
+	if got := cff2.VarStore.AxisCount(); got != -1 && got != axisCount {
+		return nil, fmt.Errorf("invalid number of axis in CFF table (%d != %d)", got, axisCount)
+	}
+	return cff2, nil
 }
 
 func loadHVtmx(hheaRaw, htmxRaw []byte, numGlyphs int) (*tables.Hhea, tables.Hmtx, error) {
@@ -350,7 +376,7 @@ type Face struct {
 	// Coords are the current variable coordinates, expressed in normalized units.
 	// It is empty for non variable fonts.
 	// Use `SetVariations` to convert from design (user) space units.
-	Coords []float32
+	Coords []tables.Coord
 
 	// Horizontal and vertical pixels-per-em (ppem), used to select bitmap sizes.
 	XPpem, YPpem uint16

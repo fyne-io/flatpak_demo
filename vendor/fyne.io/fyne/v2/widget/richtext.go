@@ -28,9 +28,13 @@ const (
 // Since: 2.1
 type RichText struct {
 	BaseWidget
-	Segments   []RichTextSegment
-	Wrapping   fyne.TextWrap
-	Scroll     widget.ScrollDirection
+	Segments []RichTextSegment
+	Wrapping fyne.TextWrap
+	Scroll   widget.ScrollDirection
+
+	// The truncation mode of the text
+	//
+	// Since: 2.4
 	Truncation fyne.TextTruncation
 
 	inset     fyne.Size     // this varies due to how the widget works (entry with scroller vs others with padding)
@@ -213,6 +217,31 @@ func (t *RichText) cachedSegmentVisual(seg RichTextSegment, offset int) fyne.Can
 		t.visualCache[seg] = append(t.visualCache[seg], vis)
 	}
 	return vis
+}
+
+func (t *RichText) cleanVisualCache() {
+	t.cacheLock.Lock()
+	defer t.cacheLock.Unlock()
+	if len(t.visualCache) <= len(t.Segments) {
+		return
+	}
+	var deletingSegs []RichTextSegment
+	for seg1 := range t.visualCache {
+		found := false
+		for _, seg2 := range t.Segments {
+			if seg1 == seg2 {
+				found = true
+				break
+			}
+		}
+		if !found {
+			// cached segment is not currently in t.Segments, clear it
+			deletingSegs = append(deletingSegs, seg1)
+		}
+	}
+	for _, seg := range deletingSegs {
+		delete(t.visualCache, seg)
+	}
 }
 
 // insertAt inserts the text at the specified position
@@ -708,6 +737,8 @@ func (r *textRenderer) Refresh() {
 
 	r.Layout(r.obj.Size())
 	canvas.Refresh(r.obj.super())
+
+	r.obj.cleanVisualCache()
 }
 
 func (r *textRenderer) layoutRow(texts []fyne.CanvasObject, align fyne.TextAlign, xPos, yPos, lineWidth float32) (float32, float32) {
@@ -1089,9 +1120,9 @@ func truncateLimit(s string, text *canvas.Text, limit int, ellipsis []rune) (int
 	out := shaper.Shape(in)
 
 	l.Prepare(conf, runes, shaping.NewSliceIterator([]shaping.Output{out}))
-	finalLine, _, done := l.WrapNextLine(limit)
+	wrapped, done := l.WrapNextLine(limit)
 
-	count := finalLine[0].Runes.Count
+	count := wrapped.Line[0].Runes.Count
 	full := done && count == len(runes)
 	if !full && len(ellipsis) > 0 {
 		count--
