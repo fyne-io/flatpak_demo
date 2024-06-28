@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -55,6 +56,14 @@ func main() {
 			container.NewHSplit(markdown, preview),
 		),
 	)
+
+	if desk, ok := a.(desktop.App); ok {
+		m := fyne.NewMenu("Flatpak Demo", fyne.NewMenuItem("Show", w.Show))
+		desk.SetSystemTrayMenu(m)
+		desk.SetSystemTrayMenu(m)
+		w.SetCloseIntercept(w.Hide)
+
+	}
 
 	w.Resize(fyne.NewSize(600, 400))
 	w.ShowAndRun()
