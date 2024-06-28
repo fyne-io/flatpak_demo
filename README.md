@@ -55,6 +55,10 @@ or you can use the [io.fyne.flatpak_demo.appdata.xml](https://github.com/fyne-io
 
 A desktop file (`.desktop`) is also required (as with any other Linux desktop application). You can let the metainfo creator above generate one for you, or you can use the [io.fyne.flatpak_demo.desktop](https://github.com/fyne-io/flatpak_demo/blob/main/io.fyne.flatpak_demo.desktop) file as a reference.
 
+### Guidelines from Flathub
+Flathub has documentation regarding their requirements and suggestions for your application metadata if you wish to publish the app there.
+Most notably, the [MetaInfo guidelines](https://docs.flathub.org/docs/for-app-authors/metainfo-guidelines/) and [Quality guidelines](https://docs.flathub.org/docs/for-app-authors/metainfo-guidelines/quality-guidelines) are important to read.
+
 ## Example manifest
 The manifest for this project can be found below. It can be used as a base to use when packaging other apps using Flatpak.
 The sha256 field for the source can be found by downloading the file and running `sha256sum` on it.
