@@ -40,7 +40,14 @@
 
   <!-- Generate the oars rating at: https://hughsie.github.io/oars/generate.html -->
   <content_rating type="oars-1.1" />
-
+  
+  <!-- Needed to satisfy https://docs.flathub.org/docs/for-app-authors/metainfo-guidelines/quality-guidelines/#has-primary-brand-colors. -->
+  <!-- The colors below are only examples taken from the Fyne logo and not official for the project in any way. --> 
+  <branding>
+    <color type="primary" scheme_preference="light">#023c8a</color>
+    <color type="primary" scheme_preference="dark">#03228a</color>
+  </branding>
+  
   <releases>
     <release version="1.2.0" date="2021-12-22" type="stable">
       <description>
