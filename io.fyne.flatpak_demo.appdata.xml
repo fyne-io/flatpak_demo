@@ -6,7 +6,7 @@
   <developer_name>Fyne.io developers</developer_name>
   <summary>A demo of a Fyne application packaged as a Flatpak.</summary>
   
-  <metadata_license>BSD-3-Clause</metadata_license>
+  <metadata_license>MIT</metadata_license>
   <project_license>BSD-3-Clause</project_license>
   
   <recommends>
