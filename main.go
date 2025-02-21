@@ -60,7 +60,6 @@ func main() {
 	if desk, ok := a.(desktop.App); ok {
 		m := fyne.NewMenu("Flatpak Demo", fyne.NewMenuItem("Show", w.Show))
 		desk.SetSystemTrayMenu(m)
-		desk.SetSystemTrayMenu(m)
 		w.SetCloseIntercept(w.Hide)
 
 	}
