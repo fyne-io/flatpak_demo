@@ -1,5 +1,4 @@
 //go:build !ios && !android
-// +build !ios,!android
 
 package mobile
 
@@ -31,6 +30,6 @@ func nativeFileSave(*fileSave) (io.WriteCloser, error) {
 	return nil, nil
 }
 
-func registerRepository(d *mobileDriver) {
+func registerRepository(d *driver) {
 	repository.Register("file", intRepo.NewFileRepository())
 }

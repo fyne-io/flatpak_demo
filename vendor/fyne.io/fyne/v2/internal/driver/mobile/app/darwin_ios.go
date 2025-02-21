@@ -3,7 +3,6 @@
 // license that can be found in the LICENSE file.
 
 //go:build darwin && ios
-// +build darwin,ios
 
 package app
 
@@ -211,6 +210,11 @@ func lifecycleVisible() { theApp.sendLifecycle(lifecycle.StageVisible) }
 //export lifecycleFocused
 func lifecycleFocused() { theApp.sendLifecycle(lifecycle.StageFocused) }
 
+//export lifecycleMemoryWarning
+func lifecycleMemoryWarning() {
+	cleanCaches()
+}
+
 //export drawloop
 func drawloop() {
 	runtime.LockOSThread()
@@ -223,7 +227,7 @@ func drawloop() {
 		case <-theApp.publish:
 			theApp.publishResult <- PublishResult{}
 			return
-		case <-time.After(100 * time.Millisecond): // incase the method blocked!!
+		case <-time.After(100 * time.Millisecond): // in case the method blocked!!
 			return
 		}
 	}

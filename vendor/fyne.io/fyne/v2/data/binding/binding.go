@@ -74,26 +74,26 @@ func (b *base) RemoveListener(l DataListener) {
 }
 
 func (b *base) trigger() {
-	b.listeners.Range(func(key, _ interface{}) bool {
+	b.listeners.Range(func(key, _ any) bool {
 		queueItem(key.(DataListener).DataChanged)
 		return true
 	})
 }
 
-// Untyped supports binding a interface{} value.
+// Untyped supports binding a any value.
 //
 // Since: 2.1
 type Untyped interface {
 	DataItem
-	Get() (interface{}, error)
-	Set(interface{}) error
+	Get() (any, error)
+	Set(any) error
 }
 
-// NewUntyped returns a bindable interface{} value that is managed internally.
+// NewUntyped returns a bindable any value that is managed internally.
 //
 // Since: 2.1
 func NewUntyped() Untyped {
-	var blank interface{} = nil
+	var blank any = nil
 	v := &blank
 	return &boundUntyped{val: reflect.ValueOf(v).Elem()}
 }
@@ -104,27 +104,31 @@ type boundUntyped struct {
 	val reflect.Value
 }
 
-func (b *boundUntyped) Get() (interface{}, error) {
+func (b *boundUntyped) Get() (any, error) {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 
 	return b.val.Interface(), nil
 }
 
-func (b *boundUntyped) Set(val interface{}) error {
+func (b *boundUntyped) Set(val any) error {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if b.val.Interface() == val {
 		return nil
 	}
-
-	b.val.Set(reflect.ValueOf(val))
+	if val == nil {
+		zeroValue := reflect.Zero(b.val.Type())
+		b.val.Set(zeroValue)
+	} else {
+		b.val.Set(reflect.ValueOf(val))
+	}
 
 	b.trigger()
 	return nil
 }
 
-// ExternalUntyped supports binding a interface{} value to an external value.
+// ExternalUntyped supports binding a any value to an external value.
 //
 // Since: 2.1
 type ExternalUntyped interface {
@@ -132,11 +136,11 @@ type ExternalUntyped interface {
 	Reload() error
 }
 
-// BindUntyped returns a bindable interface{} value that is bound to an external type.
+// BindUntyped returns a bindable any value that is bound to an external type.
 // The parameter must be a pointer to the type you wish to bind.
 //
 // Since: 2.1
-func BindUntyped(v interface{}) ExternalUntyped {
+func BindUntyped(v any) ExternalUntyped {
 	t := reflect.TypeOf(v)
 	if t.Kind() != reflect.Ptr {
 		fyne.LogError("Invalid type passed to BindUntyped, must be a pointer", nil)
@@ -144,7 +148,7 @@ func BindUntyped(v interface{}) ExternalUntyped {
 	}
 
 	if v == nil {
-		var blank interface{}
+		var blank any
 		v = &blank // never allow a nil value pointer
 	}
 
@@ -157,10 +161,10 @@ func BindUntyped(v interface{}) ExternalUntyped {
 type boundExternalUntyped struct {
 	boundUntyped
 
-	old interface{}
+	old any
 }
 
-func (b *boundExternalUntyped) Set(val interface{}) error {
+func (b *boundExternalUntyped) Set(val any) error {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if b.old == val {

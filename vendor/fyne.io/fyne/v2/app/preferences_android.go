@@ -1,9 +1,12 @@
 //go:build android
-// +build android
 
 package app
 
-import "path/filepath"
+import (
+	"path/filepath"
+
+	"fyne.io/fyne/v2/internal/app"
+)
 
 // storagePath returns the location of the settings storage
 func (p *preferences) storagePath() string {
@@ -13,7 +16,7 @@ func (p *preferences) storagePath() string {
 
 // storageRoot returns the location of the app storage
 func (a *fyneApp) storageRoot() string {
-	return rootConfigDir() // we are in a sandbox, so no app ID added to this path
+	return app.RootConfigDir() // we are in a sandbox, so no app ID added to this path
 }
 
 func (p *preferences) watch() {

@@ -40,16 +40,16 @@ type Canvas struct {
 
 	painter gl.Painter
 
-	// Any object that requestes to enter to the refresh queue should
+	// Any object that requests to enter to the refresh queue should
 	// not be omitted as it is always a rendering task's decision
 	// for skipping frames or drawing calls.
 	//
 	// If an object failed to ender the refresh queue, the object may
 	// disappear or blink from the view at any frames. As of this reason,
-	// the refreshQueue is an unbounded queue which is bale to cache
+	// the refreshQueue is an unbounded queue which is able to cache
 	// arbitrary number of fyne.CanvasObject for the rendering.
 	refreshQueue *async.CanvasObjectQueue
-	dirty        uint32 // atomic
+	dirty        atomic.Bool
 
 	mWindowHeadTree, contentTree, menuTree *renderCacheTree
 }
@@ -336,23 +336,6 @@ func (c *Canvas) Painter() gl.Painter {
 
 // Refresh refreshes a canvas object.
 func (c *Canvas) Refresh(obj fyne.CanvasObject) {
-	walkNeeded := false
-	switch obj.(type) {
-	case *fyne.Container:
-		walkNeeded = true
-	case fyne.Widget:
-		walkNeeded = true
-	}
-
-	if walkNeeded {
-		driver.WalkCompleteObjectTree(obj, func(co fyne.CanvasObject, p1, p2 fyne.Position, s fyne.Size) bool {
-			if i, ok := co.(*canvas.Image); ok {
-				i.Refresh()
-			}
-			return false
-		}, nil)
-	}
-
 	c.refreshQueue.In(obj)
 	c.SetDirty()
 }
@@ -380,12 +363,12 @@ func (c *Canvas) SetContentTreeAndFocusMgr(content fyne.CanvasObject) {
 // CheckDirtyAndClear returns true if the canvas is dirty and
 // clears the dirty state atomically.
 func (c *Canvas) CheckDirtyAndClear() bool {
-	return atomic.SwapUint32(&c.dirty, 0) != 0
+	return c.dirty.Swap(false)
 }
 
 // SetDirty sets canvas dirty flag atomically.
 func (c *Canvas) SetDirty() {
-	atomic.AddUint32(&c.dirty, 1)
+	c.dirty.Store(true)
 }
 
 // SetMenuTreeAndFocusMgr sets menu tree and focus manager.
@@ -533,11 +516,11 @@ type RenderCacheNode struct {
 	parent      *RenderCacheNode
 	// cache data
 	minSize fyne.Size
-	// painterData is some data from the painter associated with the drawed node
+	// painterData is some data from the painter associated with the drawn node
 	// it may for instance point to a GL texture
 	// it should free all associated resources when released
 	// i.e. it should not simply be a texture reference integer
-	painterData interface{}
+	painterData any
 }
 
 // Obj returns the node object.
@@ -552,7 +535,6 @@ type activatableMenu interface {
 type overlayStack struct {
 	internal.OverlayStack
 
-	propertyLock sync.RWMutex
 	renderCaches []*renderCacheTree
 }
 
@@ -560,8 +542,6 @@ func (o *overlayStack) Add(overlay fyne.CanvasObject) {
 	if overlay == nil {
 		return
 	}
-	o.propertyLock.Lock()
-	defer o.propertyLock.Unlock()
 	o.add(overlay)
 }
 
@@ -569,8 +549,6 @@ func (o *overlayStack) Remove(overlay fyne.CanvasObject) {
 	if overlay == nil || len(o.List()) == 0 {
 		return
 	}
-	o.propertyLock.Lock()
-	defer o.propertyLock.Unlock()
 	o.remove(overlay)
 }
 

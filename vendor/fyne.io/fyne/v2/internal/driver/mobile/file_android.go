@@ -1,5 +1,4 @@
 //go:build android
-// +build android
 
 package mobile
 
@@ -172,7 +171,7 @@ func existsURI(uri fyne.URI) (bool, error) {
 	return ok, nil
 }
 
-func registerRepository(d *mobileDriver) {
+func registerRepository(d *driver) {
 	repo := &mobileFileRepo{}
 	repository.Register("file", repo)
 	repository.Register("content", repo)

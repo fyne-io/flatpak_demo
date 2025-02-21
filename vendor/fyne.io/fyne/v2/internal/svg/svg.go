@@ -80,7 +80,8 @@ func (d *Decoder) Draw(width, height int) (*image.NRGBA, error) {
 		imgH = int(float32(width) / config.Aspect)
 	}
 
-	d.icon.SetTarget(0, 0, float64(imgW), float64(imgH))
+	x, y := svgOffset(d.icon, imgW, imgH)
+	d.icon.SetTarget(x, y, float64(imgW), float64(imgH))
 
 	img := image.NewNRGBA(image.Rect(0, 0, imgW, imgH))
 	scanner := rasterx.NewScannerGV(config.Width, config.Height, img, img.Bounds())
@@ -95,12 +96,12 @@ func (d *Decoder) Draw(width, height int) (*image.NRGBA, error) {
 }
 
 func IsFileSVG(path string) bool {
-	return strings.ToLower(filepath.Ext(path)) == ".svg"
+	return strings.EqualFold(filepath.Ext(path), ".svg")
 }
 
 // IsResourceSVG checks if the resource is an SVG or not.
 func IsResourceSVG(res fyne.Resource) bool {
-	if strings.ToLower(filepath.Ext(res.Name())) == ".svg" {
+	if IsFileSVG(res.Name()) {
 		return true
 	}
 
@@ -115,12 +116,20 @@ func IsResourceSVG(res fyne.Resource) bool {
 	return false
 }
 
+func svgOffset(icon *oksvg.SvgIcon, _, height int) (x, y float64) {
+	if icon.ViewBox.Y < 0 { // adjust so our positive offset calculations work
+		y = icon.ViewBox.Y + (-icon.ViewBox.Y/icon.ViewBox.H)*float64(height)
+	}
+
+	return 0, y
+}
+
 // svg holds the unmarshaled XML from a Scalable Vector Graphic
 type svg struct {
 	XMLName  xml.Name      `xml:"svg"`
 	XMLNS    string        `xml:"xmlns,attr"`
-	Width    string        `xml:"width,attr"`
-	Height   string        `xml:"height,attr"`
+	Width    string        `xml:"width,attr,omitempty"`
+	Height   string        `xml:"height,attr,omitempty"`
 	ViewBox  string        `xml:"viewBox,attr,omitempty"`
 	Paths    []*pathObj    `xml:"path"`
 	Rects    []*rectObj    `xml:"rect"`
@@ -140,6 +149,7 @@ type pathObj struct {
 	StrokeLineJoin  string   `xml:"stroke-linejoin,attr,omitempty"`
 	StrokeDashArray string   `xml:"stroke-dasharray,attr,omitempty"`
 	D               string   `xml:"d,attr"`
+	Transform       string   `xml:"transform,attr,omitempty"`
 }
 
 type rectObj struct {
@@ -155,6 +165,7 @@ type rectObj struct {
 	Y               string   `xml:"y,attr,omitempty"`
 	Width           string   `xml:"width,attr,omitempty"`
 	Height          string   `xml:"height,attr,omitempty"`
+	Transform       string   `xml:"transform,attr,omitempty"`
 }
 
 type circleObj struct {
@@ -169,6 +180,7 @@ type circleObj struct {
 	CX              string   `xml:"cx,attr,omitempty"`
 	CY              string   `xml:"cy,attr,omitempty"`
 	R               string   `xml:"r,attr,omitempty"`
+	Transform       string   `xml:"transform,attr,omitempty"`
 }
 
 type ellipseObj struct {
@@ -184,6 +196,7 @@ type ellipseObj struct {
 	CY              string   `xml:"cy,attr,omitempty"`
 	RX              string   `xml:"rx,attr,omitempty"`
 	RY              string   `xml:"ry,attr,omitempty"`
+	Transform       string   `xml:"transform,attr,omitempty"`
 }
 
 type polygonObj struct {
@@ -196,6 +209,7 @@ type polygonObj struct {
 	StrokeLineJoin  string   `xml:"stroke-linejoin,attr,omitempty"`
 	StrokeDashArray string   `xml:"stroke-dasharray,attr,omitempty"`
 	Points          string   `xml:"points,attr"`
+	Transform       string   `xml:"transform,attr,omitempty"`
 }
 
 type objGroup struct {
@@ -207,6 +221,7 @@ type objGroup struct {
 	StrokeLineCap   string        `xml:"stroke-linecap,attr,omitempty"`
 	StrokeLineJoin  string        `xml:"stroke-linejoin,attr,omitempty"`
 	StrokeDashArray string        `xml:"stroke-dasharray,attr,omitempty"`
+	Transform       string        `xml:"transform,attr,omitempty"`
 	Paths           []*pathObj    `xml:"path"`
 	Circles         []*circleObj  `xml:"circle"`
 	Ellipses        []*ellipseObj `xml:"ellipse"`

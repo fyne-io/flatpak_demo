@@ -7,9 +7,9 @@ import (
 
 // An App is the definition of a graphical application.
 // Apps can have multiple windows, by default they will exit when all windows
-// have been closed. This can be modified using SetMaster() or SetCloseIntercept().
-// To start an application you need to call Run() somewhere in your main() function.
-// Alternatively use the window.ShowAndRun() function for your main window.
+// have been closed. This can be modified using SetMaster or SetCloseIntercept.
+// To start an application you need to call Run somewhere in your main function.
+// Alternatively use the [fyne.io/fyne/v2.Window.ShowAndRun] function for your main window.
 type App interface {
 	// Create a new window for the application.
 	// The first window to open is considered the "master" and when closed
@@ -27,7 +27,7 @@ type App interface {
 	// SetIcon sets the icon resource used for this application instance.
 	SetIcon(Resource)
 
-	// Run the application - this starts the event loop and waits until Quit()
+	// Run the application - this starts the event loop and waits until [App.Quit]
 	// is called or the last window closes.
 	// This should be called near the end of a main() function as it will block.
 	Run()
@@ -43,7 +43,7 @@ type App interface {
 	Driver() Driver
 
 	// UniqueID returns the application unique identifier, if set.
-	// This must be set for use of the Preferences() functions... see NewWithId(string)
+	// This must be set for use of the [App.Preferences]. see [NewWithID].
 	UniqueID() string
 
 	// SendNotification sends a system notification that will be displayed in the operating system's notification area.
@@ -64,6 +64,8 @@ type App interface {
 	Lifecycle() Lifecycle
 
 	// Metadata returns the application metadata that was set at compile time.
+	// The items of metadata are available after "fyne package" or when running "go run"
+	// Building with "go build" may cause this to be unavailable.
 	//
 	// Since: 2.2
 	Metadata() AppMetadata
@@ -75,26 +77,17 @@ type App interface {
 	CloudProvider() CloudProvider // get the (if any) configured provider
 
 	// SetCloudProvider allows developers to specify how this application should integrate with cloud services.
-	// See `fyne.io/cloud` package for implementation details.
+	// See [fyne.io/cloud] package for implementation details.
 	//
 	// Since: 2.3
 	SetCloudProvider(CloudProvider) // configure cloud for this app
 }
 
-// app contains an App variable, but due to atomic.Value restrictions on
-// interfaces we need to use an indirect type, i.e. appContainer.
-var app atomic.Value // appContainer
-
-// appContainer is a dummy container that holds an App instance. This
-// struct exists to guarantee that atomic.Value can store objects with
-// same type.
-type appContainer struct {
-	current App
-}
+var app atomic.Pointer[App]
 
 // SetCurrentApp is an internal function to set the app instance currently running.
 func SetCurrentApp(current App) {
-	app.Store(appContainer{current})
+	app.Store(&current)
 }
 
 // CurrentApp returns the current application, for which there is only 1 per process.
@@ -104,7 +97,7 @@ func CurrentApp() App {
 		LogError("Attempt to access current Fyne app when none is started", nil)
 		return nil
 	}
-	return (val).(appContainer).current
+	return *val
 }
 
 // AppMetadata captures the build metadata for an application.

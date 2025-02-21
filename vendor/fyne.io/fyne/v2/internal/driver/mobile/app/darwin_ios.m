@@ -3,7 +3,6 @@
 // license that can be found in the LICENSE file.
 
 //go:build darwin && ios
-// +build darwin,ios
 
 #include "_cgo_export.h"
 #include <pthread.h>
@@ -16,6 +15,8 @@
 #import <UserNotifications/UserNotifications.h>
 
 struct utsname sysInfo;
+
+static CGFloat keyboardHeight;
 
 @interface GoAppAppController : GLKViewController<UIContentContainer, GLKViewDelegate>
 @end
@@ -69,6 +70,10 @@ struct utsname sysInfo;
 	lifecycleDead();
 }
 
+- (void)applicationDidReceiveMemoryWarning:(UIApplication *)application {
+	lifecycleMemoryWarning();
+}
+
 - (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray <NSURL *>*)urls {
     if ([urls count] == 0) {
         return;
@@ -107,6 +112,16 @@ struct utsname sysInfo;
 	// TODO: replace by swapping out GLKViewController for a UIVIewController.
 	[super viewWillAppear:animated];
 	self.paused = YES;
+
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillShowNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillHideNotification object:nil];
 }
 
 - (void)viewDidLoad {
@@ -197,6 +212,24 @@ static void sendTouches(int change, NSSet* touches) {
 	CGSize size = [UIScreen mainScreen].nativeBounds.size;
 	updateConfig((int)size.width, (int)size.height, orientation);
 }
+
+- (void)keyboardWillShow:(NSNotification *)note {
+    CGSize keyboardSize = [[[note userInfo] objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue].size;
+    keyboardHeight = keyboardSize.height;
+
+    CGSize size = [UIScreen mainScreen].nativeBounds.size;
+	UIInterfaceOrientation orientation = [[UIApplication sharedApplication] statusBarOrientation];
+	updateConfig((int)size.width, (int)size.height, orientation);
+}
+
+- (void)keyboardWillHide:(NSNotification *)note {
+    keyboardHeight = 0;
+
+    CGSize size = [UIScreen mainScreen].nativeBounds.size;
+	UIInterfaceOrientation orientation = [[UIApplication sharedApplication] statusBarOrientation];
+	updateConfig((int)size.width, (int)size.height, orientation);
+}
+
 @end
 
 @implementation GoInputView
@@ -264,7 +297,11 @@ UIEdgeInsets getDevicePadding() {
     if (@available(iOS 11.0, *)) {
         UIWindow *window = UIApplication.sharedApplication.keyWindow;
 
-        return window.safeAreaInsets;
+        UIEdgeInsets inset = window.safeAreaInsets;
+        if (keyboardHeight != 0) {
+            inset.bottom = keyboardHeight;
+        }
+        return inset;
     }
 
     return UIEdgeInsetsZero;

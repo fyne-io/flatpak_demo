@@ -1,5 +1,4 @@
-//go:build linux || freebsd || openbsd || netbsd
-// +build linux freebsd openbsd netbsd
+//go:build (linux || freebsd || openbsd || netbsd) && !android
 
 //Note that you need to have github.com/knightpp/dbus-codegen-go installed from "custom" branch
 //go:generate dbus-codegen-go -prefix org.kde -package notifier -output internal/generated/notifier/status_notifier_item.go internal/StatusNotifierItem.xml

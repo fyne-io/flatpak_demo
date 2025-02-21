@@ -10,6 +10,7 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/internal/cache"
 	"fyne.io/fyne/v2/internal/widget"
 	"fyne.io/fyne/v2/theme"
 )
@@ -23,7 +24,8 @@ var _ fyne.Focusable = (*List)(nil)
 
 // List is a widget that pools list items for performance and
 // lays the items out in a vertical direction inside of a scroller.
-// List requires that all items are the same size.
+// By default, List requires that all items are the same size, but specific
+// rows can have their heights set with SetItemHeight.
 //
 // Since: 1.4
 type List struct {
@@ -34,6 +36,11 @@ type List struct {
 	UpdateItem   func(id ListItemID, item fyne.CanvasObject) `json:"-"`
 	OnSelected   func(id ListItemID)                         `json:"-"`
 	OnUnselected func(id ListItemID)                         `json:"-"`
+
+	// HideSeparators hides the separators between list rows
+	//
+	// Since: 2.5
+	HideSeparators bool
 
 	currentFocus  ListItemID
 	focused       bool
@@ -80,7 +87,9 @@ func (l *List) CreateRenderer() fyne.WidgetRenderer {
 	l.ExtendBaseWidget(l)
 
 	if f := l.CreateItem; f != nil && l.itemMin.IsZero() {
-		l.itemMin = f().MinSize()
+		item := createItemAndApplyThemeScope(f, l)
+
+		l.itemMin = item.MinSize()
 	}
 
 	layout := &fyne.Container{Layout: newListLayout(l)}
@@ -110,7 +119,6 @@ func (l *List) FocusLost() {
 // MinSize returns the size that this widget should not shrink below.
 func (l *List) MinSize() fyne.Size {
 	l.ExtendBaseWidget(l)
-
 	return l.BaseWidget.MinSize()
 }
 
@@ -157,20 +165,24 @@ func (l *List) scrollTo(id ListItemID) {
 		return
 	}
 
-	separatorThickness := theme.Padding()
+	separatorThickness := l.Theme().Size(theme.SizeNamePadding)
 	y := float32(0)
 	lastItemHeight := l.itemMin.Height
-	if l.itemHeights == nil || len(l.itemHeights) == 0 {
+	if len(l.itemHeights) == 0 {
 		y = (float32(id) * l.itemMin.Height) + (float32(id) * separatorThickness)
 	} else {
-		for i := 0; i < id; i++ {
+		i := 0
+		for ; i < id; i++ {
 			height := l.itemMin.Height
 			if h, ok := l.itemHeights[i]; ok {
 				height = h
 			}
 
 			y += height + separatorThickness
-			lastItemHeight = height
+		}
+		lastItemHeight = l.itemMin.Height
+		if h, ok := l.itemHeights[i]; ok {
+			lastItemHeight = h
 		}
 	}
 
@@ -190,7 +202,7 @@ func (l *List) Resize(s fyne.Size) {
 	}
 
 	l.offsetUpdated(l.scroller.Offset)
-	l.scroller.Content.(*fyne.Container).Layout.(*listLayout).updateList(false)
+	l.scroller.Content.(*fyne.Container).Layout.(*listLayout).updateList(true)
 }
 
 // Select add the item identified by the given ID to the selection.
@@ -257,6 +269,35 @@ func (l *List) ScrollToTop() {
 	l.Refresh()
 }
 
+// ScrollToOffset scrolls the list to the given offset position.
+//
+// Since: 2.5
+func (l *List) ScrollToOffset(offset float32) {
+	if l.scroller == nil {
+		return
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	contentHeight := l.contentMinSize().Height
+	if l.Size().Height >= contentHeight {
+		return // content fully visible - no need to scroll
+	}
+	if offset > contentHeight {
+		offset = contentHeight
+	}
+	l.scroller.Offset.Y = offset
+	l.offsetUpdated(l.scroller.Offset)
+	l.Refresh()
+}
+
+// GetScrollOffset returns the current scroll offset position
+//
+// Since: 2.5
+func (l *List) GetScrollOffset() float32 {
+	return l.offsetY
+}
+
 // TypedKey is called if a key event happens while this List is focused.
 //
 // Implements: fyne.Focusable
@@ -321,8 +362,36 @@ func (l *List) UnselectAll() {
 	}
 }
 
+func (l *List) contentMinSize() fyne.Size {
+	separatorThickness := l.Theme().Size(theme.SizeNamePadding)
+	l.propertyLock.Lock()
+	defer l.propertyLock.Unlock()
+	if l.Length == nil {
+		return fyne.NewSize(0, 0)
+	}
+	items := l.Length()
+
+	if len(l.itemHeights) == 0 {
+		return fyne.NewSize(l.itemMin.Width,
+			(l.itemMin.Height+separatorThickness)*float32(items)-separatorThickness)
+	}
+
+	height := float32(0)
+	totalCustom := 0
+	templateHeight := l.itemMin.Height
+	for id, itemHeight := range l.itemHeights {
+		if id < items {
+			totalCustom++
+			height += itemHeight
+		}
+	}
+	height += float32(items-totalCustom) * templateHeight
+
+	return fyne.NewSize(l.itemMin.Width, height+separatorThickness*float32(items-1))
+}
+
 // fills l.visibleRowHeights and also returns offY and minRow
-func (l *listLayout) calculateVisibleRowHeights(itemHeight float32, length int) (offY float32, minRow int) {
+func (l *listLayout) calculateVisibleRowHeights(itemHeight float32, length int, th fyne.Theme) (offY float32, minRow int) {
 	rowOffset := float32(0)
 	isVisible := false
 	l.visibleRowHeights = l.visibleRowHeights[:0]
@@ -331,8 +400,7 @@ func (l *listLayout) calculateVisibleRowHeights(itemHeight float32, length int) 
 		return
 	}
 
-	// theme.Padding is a slow call, so we cache it
-	padding := theme.Padding()
+	padding := th.Size(theme.SizeNamePadding)
 
 	if len(l.list.itemHeights) == 0 {
 		paddedItemHeight := itemHeight + padding
@@ -349,11 +417,11 @@ func (l *listLayout) calculateVisibleRowHeights(itemHeight float32, length int) 
 			offY = 0
 		}
 
-		if maxRow > length {
-			maxRow = length
+		if maxRow > length-1 {
+			maxRow = length - 1
 		}
 
-		for i := 0; i < maxRow-minRow; i++ {
+		for i := 0; i <= maxRow-minRow; i++ {
 			l.visibleRowHeights = append(l.visibleRowHeights, itemHeight)
 		}
 		return
@@ -411,11 +479,17 @@ func (l *listRenderer) MinSize() fyne.Size {
 
 func (l *listRenderer) Refresh() {
 	if f := l.list.CreateItem; f != nil {
-		l.list.itemMin = f().MinSize()
+		item := createItemAndApplyThemeScope(f, l.list)
+		l.list.itemMin = item.MinSize()
 	}
 	l.Layout(l.list.Size())
 	l.scroller.Refresh()
-	l.layout.Layout.(*listLayout).updateList(false)
+	layout := l.layout.Layout.(*listLayout)
+	layout.updateList(false)
+
+	for _, s := range layout.separators {
+		s.Refresh()
+	}
 	canvas.Refresh(l.list.super())
 }
 
@@ -446,9 +520,11 @@ func newListItem(child fyne.CanvasObject, tapped func()) *listItem {
 // CreateRenderer is a private method to Fyne which links this widget to its renderer.
 func (li *listItem) CreateRenderer() fyne.WidgetRenderer {
 	li.ExtendBaseWidget(li)
+	th := li.Theme()
+	v := fyne.CurrentApp().Settings().ThemeVariant()
 
-	li.background = canvas.NewRectangle(theme.HoverColor())
-	li.background.CornerRadius = theme.SelectionRadiusSize()
+	li.background = canvas.NewRectangle(th.Color(theme.ColorNameHover, v))
+	li.background.CornerRadius = th.Size(theme.SizeNameSelectionRadius)
 	li.background.Hide()
 
 	objects := []fyne.CanvasObject{li.background, li.child}
@@ -509,12 +585,15 @@ func (li *listItemRenderer) Layout(size fyne.Size) {
 }
 
 func (li *listItemRenderer) Refresh() {
-	li.item.background.CornerRadius = theme.SelectionRadiusSize()
+	th := li.item.Theme()
+	v := fyne.CurrentApp().Settings().ThemeVariant()
+
+	li.item.background.CornerRadius = th.Size(theme.SizeNameSelectionRadius)
 	if li.item.selected {
-		li.item.background.FillColor = theme.SelectionColor()
+		li.item.background.FillColor = th.Color(theme.ColorNameSelection, v)
 		li.item.background.Show()
 	} else if li.item.hovered {
-		li.item.background.FillColor = theme.HoverColor()
+		li.item.background.FillColor = th.Color(theme.ColorNameHover, v)
 		li.item.background.Show()
 	} else {
 		li.item.background.Hide()
@@ -545,7 +624,7 @@ type listLayout struct {
 
 func newListLayout(list *List) fyne.Layout {
 	l := &listLayout{list: list}
-	l.slicePool.New = func() interface{} {
+	l.slicePool.New = func() any {
 		s := make([]listItemAndID, 0)
 		return &s
 	}
@@ -558,40 +637,16 @@ func (l *listLayout) Layout([]fyne.CanvasObject, fyne.Size) {
 }
 
 func (l *listLayout) MinSize([]fyne.CanvasObject) fyne.Size {
-	l.list.propertyLock.Lock()
-	defer l.list.propertyLock.Unlock()
-	items := 0
-	if f := l.list.Length; f == nil {
-		return fyne.NewSize(0, 0)
-	} else {
-		items = f()
-	}
-
-	separatorThickness := theme.Padding()
-	if l.list.itemHeights == nil || len(l.list.itemHeights) == 0 {
-		return fyne.NewSize(l.list.itemMin.Width,
-			(l.list.itemMin.Height+separatorThickness)*float32(items)-separatorThickness)
-	}
-
-	height := float32(0)
-	templateHeight := l.list.itemMin.Height
-	for item := 0; item < items; item++ {
-		itemHeight, ok := l.list.itemHeights[item]
-		if ok {
-			height += itemHeight
-		} else {
-			height += templateHeight
-		}
-	}
-
-	return fyne.NewSize(l.list.itemMin.Width, height+separatorThickness*float32(items-1))
+	return l.list.contentMinSize()
 }
 
 func (l *listLayout) getItem() *listItem {
 	item := l.itemPool.Obtain()
 	if item == nil {
 		if f := l.list.CreateItem; f != nil {
-			item = newListItem(f(), nil)
+			item2 := createItemAndApplyThemeScope(f, l.list)
+
+			item = newListItem(item2, nil)
 		}
 	}
 	return item.(*listItem)
@@ -639,8 +694,9 @@ func (l *listLayout) setupListItem(li *listItem, id ListItemID, focus bool) {
 }
 
 func (l *listLayout) updateList(newOnly bool) {
+	th := l.list.Theme()
+	separatorThickness := th.Size(theme.SizeNamePadding)
 	l.renderLock.Lock()
-	separatorThickness := theme.Padding()
 	width := l.list.Size().Width
 	length := 0
 	if f := l.list.Length; f != nil {
@@ -657,7 +713,7 @@ func (l *listLayout) updateList(newOnly bool) {
 	wasVisible = append(wasVisible, l.visible...)
 
 	l.list.propertyLock.Lock()
-	offY, minRow := l.calculateVisibleRowHeights(l.list.itemMin.Height, length)
+	offY, minRow := l.calculateVisibleRowHeights(l.list.itemMin.Height, length, th)
 	l.list.propertyLock.Unlock()
 	if len(l.visibleRowHeights) == 0 && length > 0 { // we can't show anything until we have some dimensions
 		l.renderLock.Unlock() // user code should not be locked
@@ -741,20 +797,31 @@ func (l *listLayout) updateList(newOnly bool) {
 }
 
 func (l *listLayout) updateSeparators() {
+	if l.list.HideSeparators {
+		l.separators = nil
+		return
+	}
 	if lenChildren := len(l.children); lenChildren > 1 {
 		if lenSep := len(l.separators); lenSep > lenChildren {
 			l.separators = l.separators[:lenChildren]
 		} else {
 			for i := lenSep; i < lenChildren; i++ {
-				l.separators = append(l.separators, NewSeparator())
+
+				sep := NewSeparator()
+				if cache.OverrideThemeMatchingScope(sep, l.list) {
+					sep.Refresh()
+				}
+
+				l.separators = append(l.separators, sep)
 			}
 		}
 	} else {
 		l.separators = nil
 	}
 
-	separatorThickness := theme.SeparatorThicknessSize()
-	dividerOff := (theme.Padding() + separatorThickness) / 2
+	th := l.list.Theme()
+	separatorThickness := th.Size(theme.SizeNameSeparatorThickness)
+	dividerOff := (th.Size(theme.SizeNamePadding) + separatorThickness) / 2
 	for i, child := range l.children {
 		if i == 0 {
 			continue
@@ -791,4 +858,14 @@ func (l *listLayout) nilOldVisibleSliceData(objs []listItemAndID, len, oldLen in
 			objs[i].item = nil
 		}
 	}
+}
+
+func createItemAndApplyThemeScope(f func() fyne.CanvasObject, scope fyne.Widget) fyne.CanvasObject {
+	item := f()
+	if !cache.OverrideThemeMatchingScope(item, scope) {
+		return item
+	}
+
+	item.Refresh()
+	return item
 }

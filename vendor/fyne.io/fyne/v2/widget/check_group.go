@@ -168,7 +168,7 @@ func (r *CheckGroup) update() {
 
 		item.Text = r.Options[i]
 		item.Checked = contains
-		item.DisableableWidget.disabled = r.disabled
+		item.DisableableWidget.disabled.Store(r.disabled.Load())
 		item.Refresh()
 	}
 }
@@ -182,7 +182,7 @@ type checkGroupRenderer struct {
 // Layout the components of the checks widget
 func (r *checkGroupRenderer) Layout(_ fyne.Size) {
 	count := 1
-	if r.items != nil && len(r.items) > 0 {
+	if len(r.items) > 0 {
 		count = len(r.items)
 	}
 	var itemHeight, itemWidth float32
@@ -261,7 +261,21 @@ func (r *checkGroupRenderer) updateItems() {
 		}
 		item.Text = r.checks.Options[i]
 		item.Checked = contains
-		item.disabled = r.checks.disabled
+		item.disabled.Store(r.checks.disabled.Load())
 		item.Refresh()
 	}
+}
+
+func removeDuplicates(options []string) []string {
+	var result []string
+	found := make(map[string]bool)
+
+	for _, option := range options {
+		if _, ok := found[option]; !ok {
+			found[option] = true
+			result = append(result, option)
+		}
+	}
+
+	return result
 }

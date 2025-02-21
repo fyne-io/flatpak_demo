@@ -16,7 +16,7 @@ var (
 	menuItems         = make(map[uint32]*MenuItem)
 	menuItemsLock     sync.RWMutex
 
-	currentID = uint32(0)
+	currentID atomic.Uint32
 	quitOnce  sync.Once
 )
 
@@ -66,7 +66,7 @@ func (item *MenuItem) String() string {
 func newMenuItem(title string, tooltip string, parent *MenuItem) *MenuItem {
 	return &MenuItem{
 		ClickedCh:   make(chan struct{}),
-		id:          atomic.AddUint32(&currentID, 1),
+		id:          currentID.Add(1),
 		title:       title,
 		tooltip:     tooltip,
 		disabled:    false,
@@ -127,6 +127,14 @@ func Register(onReady func(), onExit func()) {
 
 // ResetMenu will remove all menu items
 func ResetMenu() {
+	menuItemsLock.Lock()
+	id := currentID.Load()
+	menuItemsLock.Unlock()
+	for i, item := range menuItems {
+		if i < id {
+			item.Remove()
+		}
+	}
 	resetMenu()
 }
 
@@ -145,8 +153,8 @@ func AddMenuItem(title string, tooltip string) *MenuItem {
 }
 
 // AddMenuItemCheckbox adds a menu item with the designated title and tooltip and a checkbox for Linux.
+// On other platforms there will be a check indicated next to the item if `checked` is true.
 // It can be safely invoked from different goroutines.
-// On Windows and OSX this is the same as calling AddMenuItem
 func AddMenuItemCheckbox(title string, tooltip string, checked bool) *MenuItem {
 	item := newMenuItem(title, tooltip, nil)
 	item.isCheckable = true
@@ -157,12 +165,12 @@ func AddMenuItemCheckbox(title string, tooltip string, checked bool) *MenuItem {
 
 // AddSeparator adds a separator bar to the menu
 func AddSeparator() {
-	addSeparator(atomic.AddUint32(&currentID, 1), 0)
+	addSeparator(currentID.Add(1), 0)
 }
 
 // AddSeparator adds a separator bar to the submenu
 func (item *MenuItem) AddSeparator() {
-	addSeparator(atomic.AddUint32(&currentID, 1), item.id)
+	addSeparator(currentID.Add(1), item.id)
 }
 
 // AddSubMenuItem adds a nested sub-menu item with the designated title and tooltip.
@@ -224,6 +232,11 @@ func (item *MenuItem) Remove() {
 	removeMenuItem(item)
 	menuItemsLock.Lock()
 	delete(menuItems, item.id)
+	select {
+	case <-item.ClickedCh:
+	default:
+	}
+	close(item.ClickedCh)
 	menuItemsLock.Unlock()
 }
 

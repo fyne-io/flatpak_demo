@@ -15,7 +15,7 @@ type iconRenderer struct {
 }
 
 func (i *iconRenderer) MinSize() fyne.Size {
-	return fyne.NewSquareSize(theme.IconInlineSize())
+	return fyne.NewSquareSize(i.image.Theme().Size(theme.SizeNameInlineIcon))
 }
 
 func (i *iconRenderer) Layout(size fyne.Size) {
@@ -71,6 +71,7 @@ func (i *Icon) CreateRenderer() fyne.WidgetRenderer {
 
 	img := canvas.NewImageFromResource(i.Resource)
 	img.FillMode = canvas.ImageFillContain
+
 	r := &iconRenderer{image: i, raster: img}
 	r.SetObjects([]fyne.CanvasObject{img})
 	i.cachedRes = i.Resource

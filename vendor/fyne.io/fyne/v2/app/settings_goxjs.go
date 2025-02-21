@@ -1,5 +1,4 @@
-//go:build js || wasm || test_web_driver
-// +build js wasm test_web_driver
+//go:build wasm || test_web_driver
 
 package app
 
@@ -18,7 +17,9 @@ func watchFile(path string, callback func()) {
 }
 
 func (s *settings) watchSettings() {
+	watchTheme(s)
 }
 
 func (s *settings) stopWatching() {
+	stopWatchingTheme()
 }

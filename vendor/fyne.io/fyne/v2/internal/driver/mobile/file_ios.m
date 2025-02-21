@@ -1,5 +1,4 @@
 //go:build ios
-// +build ios
 
 #import <Foundation/Foundation.h>
 
@@ -40,6 +39,7 @@ const void* iosOpenFileWriter(void* urlPtr) {
 void iosCloseFileWriter(void* handlePtr) {
     NSFileHandle* handle = (NSFileHandle*)handlePtr;
 
+    [handle synchronizeFile];
     [handle closeFile];
 }
 

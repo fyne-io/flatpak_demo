@@ -36,19 +36,18 @@ var _ fyne.Driver = (*gLDriver)(nil)
 const drawOnMainThread bool = runtime.GOOS == "darwin" && runtime.GOARCH == "arm64"
 
 type gLDriver struct {
-	windowLock sync.RWMutex
-	windows    []fyne.Window
-	device     *glDevice
-	done       chan interface{}
-	drawDone   chan interface{}
+	windowLock   sync.RWMutex
+	windows      []fyne.Window
+	done         chan struct{}
+	drawDone     chan struct{}
+	waitForStart chan struct{}
 
-	animation *animation.Runner
+	animation animation.Runner
 
 	currentKeyModifiers fyne.KeyModifier // desktop driver only
 
 	trayStart, trayStop func()     // shut down the system tray, if used
 	systrayMenu         *fyne.Menu // cache the menu set so we know when to refresh
-	systrayLock         sync.Mutex
 }
 
 func toOSIcon(icon []byte) ([]byte, error) {
@@ -69,8 +68,8 @@ func toOSIcon(icon []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (d *gLDriver) RenderedTextSize(text string, textSize float32, style fyne.TextStyle) (size fyne.Size, baseline float32) {
-	return painter.RenderedTextSize(text, textSize, style)
+func (d *gLDriver) RenderedTextSize(text string, textSize float32, style fyne.TextStyle, source fyne.Resource) (size fyne.Size, baseline float32) {
+	return painter.RenderedTextSize(text, textSize, style, source)
 }
 
 func (d *gLDriver) CanvasForObject(obj fyne.CanvasObject) fyne.Canvas {
@@ -88,25 +87,24 @@ func (d *gLDriver) AbsolutePositionForObject(co fyne.CanvasObject) fyne.Position
 }
 
 func (d *gLDriver) Device() fyne.Device {
-	if d.device == nil {
-		d.device = &glDevice{}
-	}
-
-	return d.device
+	return &glDevice{}
 }
 
 func (d *gLDriver) Quit() {
 	if curWindow != nil {
+		if f := fyne.CurrentApp().Lifecycle().(*intapp.Lifecycle).OnExitedForeground(); f != nil {
+			curWindow.QueueEvent(f)
+		}
 		curWindow = nil
 		if d.trayStop != nil {
 			d.trayStop()
 		}
-		fyne.CurrentApp().Lifecycle().(*intapp.Lifecycle).TriggerExitedForeground()
 	}
-	defer func() {
-		recover() // we could be called twice - no safe way to check if d.done is closed
-	}()
-	close(d.done)
+
+	// Only call close once to avoid panic.
+	if running.CompareAndSwap(true, false) {
+		close(d.done)
+	}
 }
 
 func (d *gLDriver) addWindow(w *window) {
@@ -123,18 +121,19 @@ func (d *gLDriver) focusPreviousWindow() {
 	wins := d.windows
 	d.windowLock.RUnlock()
 
-	var chosen fyne.Window
+	var chosen *window
 	for _, w := range wins {
-		if !w.(*window).visible {
+		win := w.(*window)
+		if !win.visible {
 			continue
 		}
-		chosen = w
-		if w.(*window).master {
+		chosen = win
+		if win.master {
 			break
 		}
 	}
 
-	if chosen == nil || chosen.(*window).view() == nil {
+	if chosen == nil || chosen.view() == nil {
 		return
 	}
 	chosen.RequestFocus()
@@ -149,11 +148,7 @@ func (d *gLDriver) windowList() []fyne.Window {
 func (d *gLDriver) initFailed(msg string, err error) {
 	logError(msg, err)
 
-	run.L.Lock()
-	running := !run.flag
-	run.L.Unlock()
-
-	if running {
+	if !running.Load() {
 		d.Quit()
 	} else {
 		os.Exit(1)
@@ -167,15 +162,24 @@ func (d *gLDriver) Run() {
 
 	go d.catchTerm()
 	d.runGL()
+
+	// Ensure lifecycle events run to completion before the app exits
+	l := fyne.CurrentApp().Lifecycle().(*intapp.Lifecycle)
+	l.WaitForEvents()
+	l.DestroyEventQueue()
+}
+
+func (d *gLDriver) SetDisableScreenBlanking(disable bool) {
+	setDisableScreenBlank(disable)
 }
 
 // NewGLDriver sets up a new Driver instance implemented using the GLFW Go library and OpenGL bindings.
-func NewGLDriver() fyne.Driver {
+func NewGLDriver() *gLDriver {
 	repository.Register("file", intRepo.NewFileRepository())
 
 	return &gLDriver{
-		done:      make(chan interface{}),
-		drawDone:  make(chan interface{}),
-		animation: &animation.Runner{},
+		done:         make(chan struct{}),
+		drawDone:     make(chan struct{}),
+		waitForStart: make(chan struct{}),
 	}
 }

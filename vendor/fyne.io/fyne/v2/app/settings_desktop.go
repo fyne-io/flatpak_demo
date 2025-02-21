@@ -1,5 +1,4 @@
-//go:build !android && !ios && !mobile && !js && !wasm && !test_web_driver
-// +build !android,!ios,!mobile,!js,!wasm,!test_web_driver
+//go:build !android && !ios && !mobile && !wasm && !test_web_driver
 
 package app
 
@@ -63,7 +62,10 @@ func watchFile(path string, callback func()) *fsnotify.Watcher {
 func (s *settings) watchSettings() {
 	s.watcher = watchFile(s.schema.StoragePath(), s.fileChanged)
 
-	watchTheme()
+	a := fyne.CurrentApp()
+	if a != nil && s != nil && a.Settings() == s { // ignore if testing
+		watchTheme(s)
+	}
 }
 
 func (s *settings) stopWatching() {

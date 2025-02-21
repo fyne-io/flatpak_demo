@@ -1,5 +1,4 @@
-//go:build !js && !wasm && !test_web_driver
-// +build !js,!wasm,!test_web_driver
+//go:build !wasm && !test_web_driver
 
 package glfw
 
@@ -13,7 +12,9 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/internal/build"
 	"fyne.io/fyne/v2/internal/driver/common"
 	"fyne.io/fyne/v2/internal/painter"
 	"fyne.io/fyne/v2/internal/painter/gl"
@@ -77,8 +78,6 @@ type window struct {
 	icon         fyne.Resource
 	mainmenu     *fyne.MainMenu
 
-	clipboard fyne.Clipboard
-
 	master     bool
 	fullScreen bool
 	centered   bool
@@ -135,6 +134,10 @@ func (w *window) SetFullScreen(full bool) {
 }
 
 func (w *window) CenterOnScreen() {
+	if build.IsWayland {
+		return
+	}
+
 	w.centered = true
 
 	if w.view() != nil {
@@ -154,7 +157,9 @@ func (w *window) SetOnDropped(dropped func(pos fyne.Position, items []fyne.URI))
 				uris[i] = storage.NewFileURI(name)
 			}
 
-			dropped(w.mousePos, uris)
+			w.QueueEvent(func() {
+				dropped(w.mousePos, uris)
+			})
 		})
 	})
 }
@@ -184,7 +189,7 @@ func (w *window) doCenterOnScreen() {
 }
 
 func (w *window) RequestFocus() {
-	if isWayland || w.view() == nil {
+	if build.IsWayland || w.view() == nil {
 		return
 	}
 
@@ -193,6 +198,10 @@ func (w *window) RequestFocus() {
 
 func (w *window) SetIcon(icon fyne.Resource) {
 	w.icon = icon
+	if build.IsWayland {
+		return
+	}
+
 	if icon == nil {
 		appIcon := fyne.CurrentApp().Icon()
 		if appIcon != nil {
@@ -266,24 +275,26 @@ func (w *window) fitContent() {
 }
 
 func (w *window) getMonitorForWindow() *glfw.Monitor {
-	x, y := w.xpos, w.ypos
-	if w.fullScreen {
-		x, y = w.viewport.GetPos()
-	}
-	xOff := x + (w.width / 2)
-	yOff := y + (w.height / 2)
-
-	for _, monitor := range glfw.GetMonitors() {
-		x, y := monitor.GetPos()
-
-		if x > xOff || y > yOff {
-			continue
+	if !build.IsWayland {
+		x, y := w.xpos, w.ypos
+		if w.fullScreen {
+			x, y = w.viewport.GetPos()
 		}
-		if videoMode := monitor.GetVideoMode(); x+videoMode.Width <= xOff || y+videoMode.Height <= yOff {
-			continue
-		}
+		xOff := x + (w.width / 2)
+		yOff := y + (w.height / 2)
 
-		return monitor
+		for _, monitor := range glfw.GetMonitors() {
+			x, y := monitor.GetPos()
+
+			if x > xOff || y > yOff {
+				continue
+			}
+			if videoMode := monitor.GetVideoMode(); x+videoMode.Width <= xOff || y+videoMode.Height <= yOff {
+				continue
+			}
+
+			return monitor
+		}
 	}
 
 	// try built-in function to detect monitor if above logic didn't succeed
@@ -296,15 +307,18 @@ func (w *window) getMonitorForWindow() *glfw.Monitor {
 }
 
 func (w *window) detectScale() float32 {
-	if isWayland { // Wayland controls scale through content scaling
-		return 1.0
+	if build.IsWayland { // Wayland controls scale through content scaling
+		return 1
 	}
 	monitor := w.getMonitorForWindow()
 	if monitor == nil {
-		return 1.0
+		return 1
 	}
 
-	widthMm, _ := monitor.GetPhysicalSize()
+	widthMm, heightMm := monitor.GetPhysicalSize()
+	if runtime.GOOS == "linux" && widthMm == 60 && heightMm == 60 { // Steam Deck incorrectly reports 6cm square!
+		return 1
+	}
 	widthPx := monitor.GetVideoMode().Width
 
 	return calculateDetectedScale(widthMm, widthPx)
@@ -319,7 +333,7 @@ func (w *window) resized(_ *glfw.Window, width, height int) {
 }
 
 func (w *window) scaled(_ *glfw.Window, x float32, y float32) {
-	if !isWayland { // other platforms handle this using older APIs
+	if !build.IsWayland { // other platforms handle this using older APIs
 		return
 	}
 
@@ -703,7 +717,7 @@ func (w *window) rescaleOnMain() {
 
 func (w *window) create() {
 	runOnMain(func() {
-		if !isWayland {
+		if !build.IsWayland {
 			// make the window hidden, we will set it up and then show it later
 			glfw.WindowHint(glfw.Visible, glfw.False)
 		}
@@ -797,4 +811,9 @@ func (w *window) view() *glfw.Window {
 		return nil
 	}
 	return w.viewport
+}
+
+// wrapInnerWindow is a no-op to match what the web driver provides
+func wrapInnerWindow(*container.InnerWindow, fyne.Window, *gLDriver) fyne.Window {
+	return nil
 }
