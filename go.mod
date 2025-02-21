@@ -1,8 +1,8 @@
 module github.com/fyne-io/flatpak_demo
 
-go 1.17
+go 1.19
 
-require fyne.io/fyne/v2 v2.5.3
+require fyne.io/fyne/v2 v2.5.4
 
 require (
 	fyne.io/systray v1.11.0 // indirect
@@ -21,6 +21,7 @@ require (
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/jeandeaual/go-locale v0.0.0-20240223122105-ce5225dcaa49 // indirect
 	github.com/jsummers/gobmp v0.0.0-20151104160322-e2ba15ffa76e // indirect
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/nicksnyder/go-i18n/v2 v2.4.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rymdport/portal v0.3.0 // indirect
